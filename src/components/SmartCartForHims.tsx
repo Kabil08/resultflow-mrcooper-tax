@@ -130,14 +130,6 @@ const SmartCartForHims = ({
             <h2 className="text-lg font-semibold text-hims-brown">
               Your smart cart
             </h2>
-            <div className="bg-white border border-hims-brown/20 text-hims-brown text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-              <img
-                src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
-                alt="ResultFlow AI"
-                className="w-3 h-3 object-contain"
-              />
-              AI Assistant
-            </div>
           </div>
           <p className="text-sm text-hims-brown/60 flex items-center gap-1">
             Powered by ResultFlow AI

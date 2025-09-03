@@ -599,11 +599,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                     Care Assistant
                   </SheetTitle>
                   <SheetDescription className="text-sm text-hims-beige/80 flex items-center gap-1">
-                    <img
-                      src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
-                      alt="ResultFlow AI"
-                      className="w-4 h-4 object-contain"
-                    />
                     Powered by ResultFlow AI
                   </SheetDescription>
                 </div>
