@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Send, Bot, User, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Send, Bot, User, Sparkles, Check } from "lucide-react";
 import Markdown from "markdown-to-jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
 import { mockRecommendations } from "@/data/mockData";
 import SmartCartForHims from "./SmartCartForHims";
 import { useIsMobile } from "@/hooks/use-mobile";
+import TestimonialsDialog from "./TestimonialsDialog";
 
 interface ChatDialogProps {
   isOpen: boolean;
@@ -75,11 +76,29 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         benefits: ["Free shipping", "Auto-refills", "Flexible scheduling"],
       },
     },
+    {
+      id: "2",
+      type: "assistant",
+      content:
+        "Based on our analysis of your skin type and concerns, we've found some skin care products that may work well for you:\n\n" +
+        "**🔍 Your Skin Analysis:**\n" +
+        "• Combination skin type\n" +
+        "• Mild sensitivity\n" +
+        "• Early signs of aging\n\n" +
+        "**✨ Personalized Recommendations:**\n" +
+        "Here are some products specifically chosen for your skin profile:",
+      timestamp: new Date(),
+      recommendations: [mockRecommendations.skin],
+    },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showSmartCart, setShowSmartCart] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [showTestimonials, setShowTestimonials] = useState(false);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -291,21 +310,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     }
   };
 
-  const handleAddToCart = (product: Product) => {
-    setCartItems((prev) => {
-      const existingItem = prev.find((item) => item.id === product.id);
-      if (existingItem) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
-    setShowSmartCart(true);
-  };
-
   const handleUpdateQuantity = (productId: string, newQuantity: number) => {
     if (newQuantity === 0) {
       setCartItems((prev) => prev.filter((item) => item.id !== productId));
@@ -318,48 +322,129 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     );
   };
 
-  const renderRecommendation = (recommendation: ProductRecommendation) => (
-    <div className="mt-2 p-4 bg-white rounded-lg border border-hims-brown/20">
-      <h3 className="font-semibold text-hims-brown flex items-center gap-2">
-        <Sparkles className="h-4 w-4" />
-        {recommendation.title}
-      </h3>
-      <p className="text-sm text-gray-600 mt-1">{recommendation.description}</p>
-      <div className="mt-2 space-y-4">
-        {recommendation.products.map((product) => (
-          <div key={product.id} className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-hims-beige rounded-lg overflow-hidden shrink-0">
-              <img
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium">{product.name}</p>
-              <p className="text-sm text-gray-500">
-                ${product.price.toFixed(2)}/mo
-              </p>
-              <Button
-                size="sm"
-                className="mt-2 bg-hims-brown hover:bg-hims-brown-dark text-white"
-                onClick={() => handleAddToCart(product)}
-              >
-                Add to Cart
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-      {recommendation.discount && (
-        <p className="mt-4 text-sm text-green-600 flex items-center gap-1">
-          <Sparkles className="h-3 w-3" />
-          Save {recommendation.discount}% (${recommendation.savings?.toFixed(2)}
-          )
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
+  };
+
+  const handleSelectAllProducts = (products: Product[]) => {
+    const allSelected = products.every(
+      (product) => selectedProducts[product.id]
+    );
+    const newSelectedProducts = { ...selectedProducts };
+
+    products.forEach((product) => {
+      newSelectedProducts[product.id] = !allSelected;
+    });
+
+    setSelectedProducts(newSelectedProducts);
+  };
+
+  const handleAddSelectedToCart = (products: Product[]) => {
+    const selectedProductIds = Object.entries(selectedProducts)
+      .filter((entry) => entry[1])
+      .map((entry) => entry[0]);
+
+    const productsToAdd = products.filter((product) =>
+      selectedProductIds.includes(product.id)
+    );
+
+    if (productsToAdd.length === 0) {
+      return;
+    }
+
+    setCartItems((prev) => {
+      const newItems = [...prev];
+      productsToAdd.forEach((product) => {
+        const existingItem = newItems.find((item) => item.id === product.id);
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          newItems.push({ ...product, quantity: 1 });
+        }
+      });
+      return newItems;
+    });
+
+    setShowSmartCart(true);
+    setSelectedProducts({});
+  };
+
+  const renderRecommendation = (recommendation: ProductRecommendation) => {
+    const allSelected = recommendation.products.every(
+      (product) => selectedProducts[product.id]
+    );
+
+    return (
+      <div className="mt-2 p-4 bg-white rounded-lg border border-hims-brown/20">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-hims-brown flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            {recommendation.title}
+          </h3>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-sm"
+            onClick={() => handleSelectAllProducts(recommendation.products)}
+          >
+            {allSelected ? "Deselect All" : "Select All"}
+          </Button>
+        </div>
+        <p className="text-sm text-gray-600 mt-1">
+          {recommendation.description}
         </p>
-      )}
-    </div>
-  );
+        <div className="mt-2 space-y-4">
+          {recommendation.products.map((product) => (
+            <div key={product.id} className="flex items-center gap-4">
+              <div
+                className="w-6 h-6 rounded border border-hims-brown/20 flex items-center justify-center cursor-pointer hover:bg-hims-beige"
+                onClick={() => handleSelectProduct(product.id)}
+              >
+                {selectedProducts[product.id] && (
+                  <Check className="h-4 w-4 text-hims-brown" />
+                )}
+              </div>
+              <div className="w-20 h-20 bg-hims-beige rounded-lg overflow-hidden shrink-0">
+                <img
+                  src={product.image || "/placeholder.svg"}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">{product.name}</p>
+                <p className="text-sm text-gray-500">
+                  ${product.price.toFixed(2)}/mo
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {recommendation.discount && (
+          <p className="mt-4 text-sm text-green-600 flex items-center gap-1">
+            <Sparkles className="h-3 w-3" />
+            Save {recommendation.discount}% ($
+            {recommendation.savings?.toFixed(2)})
+          </p>
+        )}
+        <Button
+          size="sm"
+          className="mt-4 w-full bg-hims-brown hover:bg-hims-brown-dark text-white"
+          onClick={() => handleAddSelectedToCart(recommendation.products)}
+          disabled={
+            !recommendation.products.some(
+              (product) => selectedProducts[product.id]
+            )
+          }
+        >
+          Add Selected to Cart
+        </Button>
+      </div>
+    );
+  };
 
   const renderPaymentRecommendation = (
     recommendation: PaymentRecommendation
@@ -372,7 +457,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       <div className="mt-2 flex items-center gap-2">
         <div className="p-2 bg-hims-beige rounded">
           <p className="text-sm font-medium">
-            {recommendation.cardType} •••• {recommendation.lastFour}
+            {recommendation.cardType} (••••)
           </p>
         </div>
       </div>
@@ -454,28 +539,71 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     </div>
   );
 
+  // Handle direct button close
+  const handleButtonClose = () => {
+    console.log("Button close clicked"); // Debug log
+    onClose();
+    setTimeout(() => {
+      console.log("Showing testimonials after button close"); // Debug log
+      setShowTestimonials(true);
+    }, 1000);
+  };
+
+  // Handle sheet close
+  const handleSheetClose = (open: boolean) => {
+    console.log("Sheet close triggered, open:", open); // Debug log
+    if (!open) {
+      onClose();
+      setTimeout(() => {
+        console.log("Showing testimonials after sheet close"); // Debug log
+        setShowTestimonials(true);
+      }, 1000);
+    }
+  };
+
+  // Reset testimonials when chat opens
+  useEffect(() => {
+    if (isOpen) {
+      setShowTestimonials(false);
+    }
+  }, [isOpen]);
+
+  // Debug log for testimonials state
+  useEffect(() => {
+    console.log("Testimonials state changed:", showTestimonials);
+  }, [showTestimonials]);
+
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={onClose}>
+      <Sheet open={isOpen} onOpenChange={handleSheetClose}>
         <SheetContent
           side={isMobile ? "bottom" : "right"}
           className={`${
             isMobile
               ? "h-[85vh] border-t rounded-t-[10px] p-0 flex flex-col"
-              : "w-full md:w-[40vw] p-0 border-l-0 sm:border-l bg-hims-beige flex flex-col"
+              : "w-full md:w-[50vw] lg:w-[45vw] p-0 border-l-0 sm:border-l bg-hims-beige flex flex-col"
           }`}
         >
           <SheetHeader className="p-4 border-b bg-hims-brown sticky top-0 z-50 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-hims-beige rounded-full flex items-center justify-center">
-                  <Bot className="h-6 w-6 text-hims-brown" />
+                <div className="w-10 h-10 bg-hims-beige rounded-full flex items-center justify-center overflow-hidden">
+                  <img
+                    src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
+                    alt="ResultFlow AI"
+                    className="w-8 h-8 object-contain"
+                  />
                 </div>
                 <div>
                   <SheetTitle className="text-xl font-semibold text-white">
                     Care Assistant
                   </SheetTitle>
-                  <SheetDescription className="text-sm text-hims-beige/80">
+                  <SheetDescription className="text-sm text-hims-beige/80 flex items-center gap-1">
+                    <img
+                      src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
+                      alt="ResultFlow AI"
+                      className="w-4 h-4 object-contain"
+                    />
                     Powered by ResultFlow AI
                   </SheetDescription>
                 </div>
@@ -483,7 +611,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onClose}
+                onClick={handleButtonClose}
                 className="h-10 w-10 text-white hover:text-white/80"
               >
                 <X className="h-5 w-5" />
@@ -581,6 +709,15 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
           </div>
 
           <div className="p-4 border-t bg-white sticky bottom-0 flex-shrink-0 mt-auto">
+            <div className="flex items-center justify-center mb-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-hims-brown hover:bg-hims-beige flex items-center gap-2"
+              >
+                📞 Talk to expert
+              </Button>
+            </div>
             <div className="flex gap-2">
               <Input
                 value={inputValue}
@@ -607,6 +744,14 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         onClose={() => setShowSmartCart(false)}
         cartItems={cartItems}
         onUpdateQuantity={handleUpdateQuantity}
+      />
+
+      <TestimonialsDialog
+        isOpen={showTestimonials}
+        onClose={() => {
+          console.log("Testimonials closing"); // Debug log
+          setShowTestimonials(false);
+        }}
       />
     </>
   );

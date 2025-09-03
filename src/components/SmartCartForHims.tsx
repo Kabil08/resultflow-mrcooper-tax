@@ -117,20 +117,31 @@ const SmartCartForHims = ({
 
   const renderHeader = () => (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-hims-brown rounded-full flex items-center justify-center">
-          <Sparkles className="h-4 w-4 text-white" />
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white p-1">
+          <img
+            src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
+            alt="ResultFlow AI"
+            className="w-full h-full object-contain"
+          />
         </div>
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-hims-brown">
               Your smart cart
             </h2>
-            <div className="bg-hims-brown text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Sparkles className="h-3 w-3" /> AI
+            <div className="bg-white border border-hims-brown/20 text-hims-brown text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+              <img
+                src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
+                alt="ResultFlow AI"
+                className="w-3 h-3 object-contain"
+              />
+              AI Assistant
             </div>
           </div>
-          <p className="text-sm text-hims-brown/60">Powered by ResultFlow AI</p>
+          <p className="text-sm text-hims-brown/60 flex items-center gap-1">
+            Powered by ResultFlow AI
+          </p>
         </div>
       </div>
       <Button
@@ -206,8 +217,7 @@ const SmartCartForHims = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-hims-brown">
-                    {mockUserData.paymentMethod.cardType} ••••{" "}
-                    {mockUserData.paymentMethod.lastFourDigits}
+                    {mockUserData.paymentMethod.cardType} (••••)
                   </span>
                   {mockUserData.paymentMethod.discount && (
                     <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded">
@@ -251,6 +261,24 @@ const SmartCartForHims = ({
               </Button>
             </div>
 
+            {/* Talk to Expert */}
+            <div className="p-4 bg-white rounded-lg border border-hims-brown/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-hims-brown">
+                    Need help with your order?
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-hims-brown hover:bg-hims-beige flex items-center gap-2"
+                >
+                  📞 Talk to expert
+                </Button>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
               <Button
@@ -278,7 +306,7 @@ const SmartCartForHims = ({
     return (
       <Drawer open={isOpen} onOpenChange={onClose}>
         <DrawerContent className="h-[85vh] bg-white">
-          <DrawerHeader className="border-b border-hims-beige bg-hims-beige">
+          <DrawerHeader className="border-b bg-white">
             {renderHeader()}
           </DrawerHeader>
           {renderContent()}
@@ -290,7 +318,7 @@ const SmartCartForHims = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0">
-        <DialogHeader className="p-4 border-b bg-hims-beige">
+        <DialogHeader className="p-4 border-b bg-white">
           {renderHeader()}
         </DialogHeader>
         <div className="flex flex-col max-h-[80vh]">{renderContent()}</div>
