@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Send, Bot, User, Sparkles, Check } from "lucide-react";
 import Markdown from "markdown-to-jsx";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,10 @@ import {
   ProductRecommendation,
   CartItem,
   Product,
-  PaymentRecommendation,
-  DeliveryRecommendation,
-  SubscriptionRecommendation,
 } from "@/types/chat";
 import { mockRecommendations } from "@/data/mockData";
 import SmartCartForHims from "./SmartCartForHims";
 import { useIsMobile } from "@/hooks/use-mobile";
-import TestimonialsDialog from "./TestimonialsDialog";
 
 interface ChatDialogProps {
   isOpen: boolean;
@@ -50,31 +46,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         "Based on this, we recommend our Complete Hair Loss Treatment (AI) package:",
       timestamp: new Date(),
       recommendations: [mockRecommendations.hair],
-      paymentRecommendation: {
-        title: "Recommended Payment Method",
-        cardType: "Bank of America",
-        lastFour: "4532",
-        benefits: [
-          "6% off on all purchases",
-          "Additional 5% on subscriptions",
-          "Free express shipping",
-        ],
-      },
-      deliveryRecommendation: {
-        title: "Delivery Address",
-        address: "123 Main St",
-        city: "San Francisco",
-        state: "CA",
-        zip: "94105",
-        deliverySpeed: "Express 24h",
-        confidence: "98%",
-      },
-      subscriptionRecommendation: {
-        title: "Recommended Plan",
-        interval: "Monthly",
-        savings: "20%",
-        benefits: ["Free shipping", "Auto-refills", "Flexible scheduling"],
-      },
     },
     {
       id: "2",
@@ -98,7 +69,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
   const [selectedProducts, setSelectedProducts] = useState<{
     [key: string]: boolean;
   }>({});
-  const [showTestimonials, setShowTestimonials] = useState(false);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -446,132 +416,17 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     );
   };
 
-  const renderPaymentRecommendation = (
-    recommendation: PaymentRecommendation
-  ) => (
-    <div className="mt-2 p-4 bg-white rounded-lg border border-hims-brown/20">
-      <h3 className="font-semibold text-hims-brown flex items-center gap-2">
-        <Sparkles className="h-4 w-4" />
-        {recommendation.title}
-      </h3>
-      <div className="mt-2 flex items-center gap-2">
-        <div className="p-2 bg-hims-beige rounded">
-          <p className="text-sm font-medium">
-            {recommendation.cardType} (••••)
-          </p>
-        </div>
-      </div>
-      <div className="mt-3">
-        <p className="text-sm text-gray-600 mb-2">Benefits:</p>
-        <ul className="space-y-1">
-          {recommendation.benefits.map((benefit: string, index: number) => (
-            <li
-              key={index}
-              className="text-sm text-gray-600 flex items-center gap-2"
-            >
-              <span className="w-1 h-1 bg-hims-brown rounded-full" />
-              {benefit}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-
-  const renderDeliveryRecommendation = (
-    recommendation: DeliveryRecommendation
-  ) => (
-    <div className="mt-2 p-4 bg-white rounded-lg border border-hims-brown/20">
-      <h3 className="font-semibold text-hims-brown flex items-center gap-2">
-        <Bot className="h-4 w-4" />
-        {recommendation.title}
-      </h3>
-      <div className="mt-2">
-        <p className="text-sm text-gray-600">
-          {recommendation.address}
-          <br />
-          {recommendation.city}, {recommendation.state} {recommendation.zip}
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium">
-            {recommendation.deliverySpeed}
-          </span>
-          <span className="text-xs text-gray-500">
-            AI Confidence: {recommendation.confidence}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderSubscriptionRecommendation = (
-    recommendation: SubscriptionRecommendation
-  ) => (
-    <div className="mt-2 p-4 bg-white rounded-lg border border-hims-brown/20">
-      <h3 className="font-semibold text-hims-brown flex items-center gap-2">
-        <Sparkles className="h-4 w-4" />
-        {recommendation.title}
-      </h3>
-      <div className="mt-2">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-1 bg-hims-beige text-hims-brown rounded text-sm font-medium">
-            {recommendation.interval}
-          </span>
-          <span className="text-green-600 text-sm font-medium">
-            Save {recommendation.savings}
-          </span>
-        </div>
-        <div className="mt-3">
-          <p className="text-sm text-gray-600 mb-2">Benefits:</p>
-          <ul className="space-y-1">
-            {recommendation.benefits.map((benefit: string, index: number) => (
-              <li
-                key={index}
-                className="text-sm text-gray-600 flex items-center gap-2"
-              >
-                <span className="w-1 h-1 bg-hims-brown rounded-full" />
-                {benefit}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-
   // Handle direct button close
   const handleButtonClose = () => {
-    console.log("Button close clicked"); // Debug log
     onClose();
-    setTimeout(() => {
-      console.log("Showing testimonials after button close"); // Debug log
-      setShowTestimonials(true);
-    }, 1000);
   };
 
   // Handle sheet close
   const handleSheetClose = (open: boolean) => {
-    console.log("Sheet close triggered, open:", open); // Debug log
     if (!open) {
       onClose();
-      setTimeout(() => {
-        console.log("Showing testimonials after sheet close"); // Debug log
-        setShowTestimonials(true);
-      }, 1000);
     }
   };
-
-  // Reset testimonials when chat opens
-  useEffect(() => {
-    if (isOpen) {
-      setShowTestimonials(false);
-    }
-  }, [isOpen]);
-
-  // Debug log for testimonials state
-  useEffect(() => {
-    console.log("Testimonials state changed:", showTestimonials);
-  }, [showTestimonials]);
 
   return (
     <>
@@ -671,27 +526,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                       {renderRecommendation(recommendation)}
                     </div>
                   ))}
-                  {message.paymentRecommendation && (
-                    <div className="ml-11 mt-2">
-                      {renderPaymentRecommendation(
-                        message.paymentRecommendation
-                      )}
-                    </div>
-                  )}
-                  {message.deliveryRecommendation && (
-                    <div className="ml-11 mt-2">
-                      {renderDeliveryRecommendation(
-                        message.deliveryRecommendation
-                      )}
-                    </div>
-                  )}
-                  {message.subscriptionRecommendation && (
-                    <div className="ml-11 mt-2">
-                      {renderSubscriptionRecommendation(
-                        message.subscriptionRecommendation
-                      )}
-                    </div>
-                  )}
                 </div>
               ))}
               {isTyping && (
@@ -739,14 +573,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         onClose={() => setShowSmartCart(false)}
         cartItems={cartItems}
         onUpdateQuantity={handleUpdateQuantity}
-      />
-
-      <TestimonialsDialog
-        isOpen={showTestimonials}
-        onClose={() => {
-          console.log("Testimonials closing"); // Debug log
-          setShowTestimonials(false);
-        }}
       />
     </>
   );
