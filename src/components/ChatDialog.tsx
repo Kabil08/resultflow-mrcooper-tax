@@ -442,19 +442,12 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
           <SheetHeader className="p-4 border-b bg-hims-brown sticky top-0 z-50 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-hims-beige rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
-                    alt="ResultFlow AI"
-                    className="w-8 h-8 object-contain"
-                  />
-                </div>
                 <div>
                   <SheetTitle className="text-xl font-semibold text-white">
                     Care Assistant
                   </SheetTitle>
                   <SheetDescription className="text-sm text-hims-beige/80 flex items-center gap-1">
-                    Powered by ResultFlow AI
+                    Powered by ResultFlow.ai
                   </SheetDescription>
                 </div>
               </div>

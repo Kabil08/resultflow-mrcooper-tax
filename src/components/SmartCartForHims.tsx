@@ -133,13 +133,6 @@ const SmartCartForHims = ({
   const renderHeader = () => (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white p-1">
-          <img
-            src="https://res.cloudinary.com/dbtapyfau/image/upload/v1756903994/ResultFlow.ai_Logo_xixmca.jpg"
-            alt="ResultFlow AI"
-            className="w-full h-full object-contain"
-          />
-        </div>
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-hims-brown">
@@ -147,7 +140,7 @@ const SmartCartForHims = ({
             </h2>
           </div>
           <p className="text-sm text-hims-brown/60 flex items-center gap-1">
-            Powered by ResultFlow AI
+            Powered by ResultFlow.ai
           </p>
         </div>
       </div>
