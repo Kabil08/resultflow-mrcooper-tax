@@ -1,25 +1,12 @@
 import { useState } from "react";
-import { X, Send, Bot, User } from "lucide-react";
+import { X, Send, User } from "lucide-react";
 import Markdown from "markdown-to-jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  Message,
-  KYCVerification,
-  TaxBreakdown as TaxBreakdownType,
-} from "@/types/chat";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Message } from "@/types/chat";
 import { mockChatResponses, mockUserData } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ImageVerification from "./kyc/ImageVerification";
-import AddressForm from "./kyc/AddressForm";
-import PaymentForm from "./kyc/PaymentForm";
 import TaxBreakdown from "./tax/TaxBreakdown";
 import AutoPaySetup from "./tax/AutoPaySetup";
 import Logo from "@/components/ui/logo";
@@ -27,16 +14,6 @@ import Logo from "@/components/ui/logo";
 interface ChatDialogProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface PaymentVerificationData {
-  type: "bank" | "card";
-  accountNumber?: string;
-  routingNumber?: string;
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-  bankName?: string;
 }
 
 const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
@@ -51,15 +28,9 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showImageVerification, setShowImageVerification] = useState(false);
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showTaxBreakdown, setShowTaxBreakdown] = useState(false);
   const [showAutoPaySetup, setShowAutoPaySetup] = useState(false);
   const [showOptions, setShowOptions] = useState<boolean>(true);
-  const [kycStatus, setKycStatus] = useState<KYCVerification>(
-    mockChatResponses.kycIntro.kycVerification
-  );
 
   const showOptionsWithMessage = () => {
     setShowOptions(true);
@@ -68,8 +39,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       {
         id: Date.now().toString(),
         type: "assistant",
-        content:
-          "Is there anything else I can help you with?\n\nYou can:\n1. Complete KYC Verification\n2. Check Tax/EMI Payments",
+        content: mockChatResponses.initial.content,
         timestamp: new Date(),
       },
     ]);
@@ -77,236 +47,39 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
 
   const handleOptionSelect = (option: string) => {
     setShowOptions(false);
-
-    if (option === "Complete KYC Verification") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          type: "user",
-          content: option,
-          timestamp: new Date(),
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          type: "assistant",
-          content: mockChatResponses.kycIntro.content,
-          timestamp: new Date(),
-          kycVerification: mockChatResponses.kycIntro.kycVerification,
-        },
-      ]);
-      setShowImageVerification(true);
-    } else if (option === "Check Tax/EMI Payments") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          type: "user",
-          content: option,
-          timestamp: new Date(),
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          type: "assistant",
-          content: mockChatResponses.taxReminder.content,
-          timestamp: new Date(),
-          taxBreakdown: mockChatResponses.taxReminder.taxBreakdown,
-        },
-      ]);
-      setShowTaxBreakdown(true);
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage = inputValue.trim();
-    setInputValue("");
-    setIsTyping(true);
-
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
         type: "user",
-        content: userMessage,
+        content: option,
         timestamp: new Date(),
       },
     ]);
 
-    setTimeout(() => {
-      const response = getAIResponse(userMessage);
+    if (option === "Check Tax/EMI Payments") {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: (Date.now() + 1).toString(),
           type: "assistant",
-          content: response.content,
+          content: mockChatResponses.taxBreakdown.content,
           timestamp: new Date(),
         },
       ]);
-      setIsTyping(false);
-      showOptionsWithMessage();
-    }, 1000 + Math.random() * 1000);
-  };
-
-  const getAIResponse = (
-    userMessage: string
-  ): {
-    content: string;
-    kycVerification?: KYCVerification;
-    taxBreakdown?: TaxBreakdownType;
-    showImageVerification?: boolean;
-    showAddressForm?: boolean;
-    showPaymentForm?: boolean;
-    showTaxBreakdown?: boolean;
-    showAutoPaySetup?: boolean;
-  } => {
-    const lowerMessage = userMessage.toLowerCase();
-
-    // KYC Flow
-    if (
-      lowerMessage.includes("start verification") ||
-      lowerMessage.includes("verify") ||
-      lowerMessage.includes("kyc") ||
-      lowerMessage.includes("yes") ||
-      lowerMessage.includes("ready")
-    ) {
-      if (kycStatus.steps.imageVerification.status === "pending") {
-        return {
-          content: mockChatResponses.kycImageVerification.content,
-          showImageVerification: true,
-        };
-      } else if (kycStatus.steps.addressVerification.status === "pending") {
-        return {
-          content: mockChatResponses.kycAddressVerification.content,
-          showAddressForm: true,
-        };
-      } else if (kycStatus.steps.paymentVerification.status === "pending") {
-        return {
-          content: mockChatResponses.kycPaymentVerification.content,
-          showPaymentForm: true,
-        };
-      }
-    }
-
-    // Tax/EMI Flow
-    if (
-      lowerMessage.includes("payment") ||
-      lowerMessage.includes("tax") ||
-      lowerMessage.includes("emi") ||
-      lowerMessage.includes("due") ||
-      lowerMessage.includes("late fee")
-    ) {
-      return {
-        content: mockChatResponses.taxReminder.content,
-        taxBreakdown: mockChatResponses.taxReminder.taxBreakdown,
-        showTaxBreakdown: true,
-      };
-    }
-
-    // AutoPay Flow
-    if (
-      lowerMessage.includes("autopay") ||
-      lowerMessage.includes("auto pay") ||
-      lowerMessage.includes("automatic payment")
-    ) {
-      return {
-        content: mockChatResponses.autopaySetup.content,
-        showAutoPaySetup: true,
-      };
-    }
-
-    // Default response
-    return {
-      content:
-        "I can help you with:\n\n" +
-        "1. KYC Verification\n" +
-        "2. Tax/EMI Payments\n" +
-        "3. AutoPay Setup\n\n" +
-        "What would you like to do?",
-    };
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSendMessage();
-    }
-  };
-
-  const handleImageCapture = (type: "selfie" | "idProof", image: string) => {
-    const updatedKycStatus = { ...kycStatus };
-    updatedKycStatus.documents[type] = image;
-    if (type === "selfie" && !updatedKycStatus.documents.idProof) {
-      updatedKycStatus.steps.imageVerification.status = "in_progress";
-    } else if (type === "idProof") {
-      updatedKycStatus.steps.imageVerification.status = "completed";
-      setKycStatus(updatedKycStatus);
-
-      // Add success message and prompt for address verification
+      setShowTaxBreakdown(true);
+    } else if (option === "Set up AutoPay") {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: (Date.now() + 1).toString(),
           type: "assistant",
-          content:
-            "Great! Your ID has been verified successfully. Now, let's verify your address.",
+          content: mockChatResponses.autopaySetup.content,
           timestamp: new Date(),
         },
       ]);
+      setShowAutoPaySetup(true);
     }
-    setKycStatus(updatedKycStatus);
-  };
-
-  const handleAddressSubmit = (data: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    proofDocument?: string;
-  }) => {
-    const updatedKycStatus = { ...kycStatus };
-    updatedKycStatus.steps.addressVerification.status = "completed";
-    updatedKycStatus.documents.addressProof = data.proofDocument;
-    setKycStatus(updatedKycStatus);
-
-    // Add success message
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        type: "assistant",
-        content:
-          "Great! Your address has been verified. Let's proceed with payment verification.",
-        timestamp: new Date(),
-      },
-    ]);
-
-    // Smooth transition to payment form
-    setShowAddressForm(false);
-    setTimeout(() => {
-      setShowPaymentForm(true);
-    }, 100);
-  };
-
-  const handlePaymentVerification = (data: PaymentVerificationData) => {
-    const updatedKycStatus = { ...kycStatus };
-    updatedKycStatus.steps.paymentVerification.status = "completed";
-    setKycStatus(updatedKycStatus);
-    setShowPaymentForm(false);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        type: "assistant",
-        content: `Payment information verified successfully using ${
-          data.type === "bank" ? "bank account" : "credit card"
-        }.\n\nIs there anything else I can help you with?`,
-        timestamp: new Date(),
-      },
-    ]);
-    showOptionsWithMessage();
   };
 
   const handleAutoPaySetup = (enabled: boolean) => {
@@ -316,32 +89,12 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       {
         id: Date.now().toString(),
         type: "assistant",
-        content: `AutoPay has been ${
-          enabled ? "enabled" : "disabled"
-        } successfully.`,
+        content: enabled
+          ? mockChatResponses.autopaySuccess.content
+          : mockChatResponses.autopayDisabled.content,
         timestamp: new Date(),
       },
     ]);
-    showOptionsWithMessage();
-  };
-
-  const handleVerificationCancel = () => {
-    setShowImageVerification(false);
-    showOptionsWithMessage();
-  };
-
-  const handleAddressCancel = () => {
-    setShowAddressForm(false);
-    showOptionsWithMessage();
-  };
-
-  const handlePaymentCancel = () => {
-    setShowPaymentForm(false);
-    showOptionsWithMessage();
-  };
-
-  const handleTaxBreakdownCancel = () => {
-    setShowTaxBreakdown(false);
     showOptionsWithMessage();
   };
 
@@ -350,9 +103,48 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     showOptionsWithMessage();
   };
 
-  const handleTaxBreakdownClose = () => {
-    setShowTaxBreakdown(false);
-    showOptionsWithMessage();
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return;
+
+    const lowerMessage = inputValue.toLowerCase();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "user",
+        content: inputValue,
+        timestamp: new Date(),
+      },
+    ]);
+    setInputValue("");
+    setIsTyping(true);
+
+    setTimeout(() => {
+      if (
+        lowerMessage.includes("tax") ||
+        lowerMessage.includes("emi") ||
+        lowerMessage.includes("payment")
+      ) {
+        setShowTaxBreakdown(true);
+      } else if (
+        lowerMessage.includes("autopay") ||
+        lowerMessage.includes("auto pay")
+      ) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            type: "assistant",
+            content: mockChatResponses.autopaySetup.content,
+            timestamp: new Date(),
+          },
+        ]);
+        setShowAutoPaySetup(true);
+      } else {
+        showOptionsWithMessage();
+      }
+      setIsTyping(false);
+    }, 1000);
   };
 
   const handlePayment = (selectedMonths: string[]) => {
@@ -372,214 +164,144 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
   };
 
   return (
-    <>
-      <Sheet open={isOpen} onOpenChange={() => onClose()}>
-        <SheetContent
-          side={isMobile ? "bottom" : "right"}
-          className={`${
-            isMobile
-              ? "h-[85vh] border-t rounded-t-[10px] p-0 flex flex-col bg-white"
-              : "w-full md:w-[50vw] lg:w-[45vw] p-0 border-l-0 sm:border-l bg-white flex flex-col"
-          }`}
-        >
-          <SheetHeader className="p-4 border-b bg-mrcooper-blue sticky top-0 z-50 flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Logo size="md" className="rounded-md" />
-                <div>
-                  <SheetTitle className="text-xl font-semibold text-white">
-                    Mr. Cooper Assistant
-                  </SheetTitle>
-                  <SheetDescription className="text-sm text-mrcooper-beige/80">
-                    Powered by ResultFlow.ai
-                  </SheetDescription>
-                </div>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent
+        side={isMobile ? "bottom" : "right"}
+        className={`w-full sm:max-w-md p-0 flex flex-col ${
+          isMobile ? "h-[90vh] rounded-t-lg" : "h-full"
+        }`}
+      >
+        <div className="bg-[#0066CC] text-white p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="bg-white rounded-lg p-1 w-10 h-10 flex items-center justify-center">
+                <Logo size="sm" variant="logo" className="rounded-sm" />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-10 w-10 text-white hover:text-white/80"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div>
+                <h1 className="text-lg font-semibold">Tax & EMI Assistant</h1>
+                <p className="text-sm opacity-90">Powered by ResultFlow.ai</p>
+              </div>
             </div>
-          </SheetHeader>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white hover:bg-blue-700"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
 
-          <div className="flex-1 overflow-y-auto bg-mrcooper-beige-light">
-            <div className="flex flex-col gap-4 p-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex items-start gap-3 ${
-                    message.type === "assistant"
-                      ? "bg-white rounded-lg shadow-sm p-4"
-                      : "bg-mrcooper-blue/5 rounded-lg p-4 ml-4"
-                  }`}
-                >
-                  {message.type === "assistant" ? (
-                    <div className="w-8 h-8 rounded-full bg-mrcooper-blue flex items-center justify-center flex-shrink-0">
-                      <Bot className="h-5 w-5 text-white" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <User className="h-5 w-5 text-gray-600" />
-                    </div>
-                  )}
-                  <div className="flex-1 space-y-1">
-                    <div className="text-sm font-medium text-gray-900">
-                      {message.type === "assistant"
-                        ? "Mr. Cooper Assistant"
-                        : "You"}
-                    </div>
-                    <div className="text-gray-700 whitespace-pre-wrap">
-                      <Markdown
-                        options={{
-                          overrides: {
-                            p: {
-                              component: "p",
-                              props: {
-                                className: "mb-2",
-                              },
-                            },
-                            strong: {
-                              component: "strong",
-                              props: {
-                                className: "font-semibold text-gray-900",
-                              },
-                            },
-                            ul: {
-                              component: "ul",
-                              props: {
-                                className: "list-disc pl-4 mb-2",
-                              },
-                            },
-                            ol: {
-                              component: "ol",
-                              props: {
-                                className: "list-decimal pl-4 mb-2",
-                              },
-                            },
-                            li: {
-                              component: "li",
-                              props: {
-                                className: "mb-1",
-                              },
-                            },
-                          },
-                        }}
-                      >
-                        {message.content}
-                      </Markdown>
-                    </div>
-                  </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-2 ${
+                message.type === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
+              {message.type === "assistant" && (
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Logo size="sm" variant="chat" className="text-[#0066CC]" />
                 </div>
-              ))}
-              {isTyping && (
-                <div className="flex items-center gap-2 text-gray-500 animate-pulse">
-                  <div className="w-2 h-2 rounded-full bg-current" />
-                  <div className="w-2 h-2 rounded-full bg-current" />
-                  <div className="w-2 h-2 rounded-full bg-current" />
+              )}
+              <div
+                className={`rounded-lg p-3 max-w-[80%] ${
+                  message.type === "user"
+                    ? "bg-[#0066CC] text-white"
+                    : "bg-gray-100"
+                }`}
+              >
+                <Markdown>{message.content}</Markdown>
+              </div>
+              {message.type === "user" && (
+                <div className="h-8 w-8 rounded-full bg-[#0066CC] flex items-center justify-center flex-shrink-0">
+                  <User className="h-5 w-5 text-white" />
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="p-4 border-t bg-white">
-            {showOptions && (
-              <div className="grid gap-2 mb-4">
-                <Button
-                  variant="default"
-                  className="w-full bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white"
-                  onClick={() =>
-                    handleOptionSelect("Complete KYC Verification")
-                  }
-                >
-                  Complete KYC Verification
-                </Button>
-                <Button
-                  variant="default"
-                  className="w-full bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white"
-                  onClick={() => handleOptionSelect("Check Tax/EMI Payments")}
-                >
-                  Check Tax/EMI Payments
-                </Button>
+          ))}
+          {isTyping && (
+            <div className="flex gap-2">
+              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <Logo size="sm" variant="chat" className="text-[#0066CC]" />
               </div>
-            )}
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Type your message..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1"
-              />
-              <Button
-                size="icon"
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
-                className="bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              <div className="bg-gray-100 rounded-lg p-3">
+                <span className="animate-pulse">Typing...</span>
+              </div>
             </div>
+          )}
+        </div>
+
+        {showOptions && (
+          <div className="px-4 space-y-2">
+            <button
+              onClick={() => handleOptionSelect("Check Tax/EMI Payments")}
+              className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0066CC] hover:bg-blue-700 text-white font-medium transition-colors"
+            >
+              Check Tax/EMI Payments
+            </button>
+            <button
+              onClick={() => handleOptionSelect("Set up AutoPay")}
+              className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0066CC] hover:bg-blue-700 text-white font-medium transition-colors"
+            >
+              Set up AutoPay
+            </button>
           </div>
-        </SheetContent>
-      </Sheet>
+        )}
 
-      {showImageVerification && (
-        <ImageVerification
-          onCapture={handleImageCapture}
-          onClose={() => setShowImageVerification(false)}
-          onNavigateToAddress={() => {
-            setShowImageVerification(false);
-            setShowAddressForm(true);
-          }}
-          onCancel={handleVerificationCancel}
-        />
-      )}
+        <div className="p-4 border-t mt-auto">
+          <div className="flex gap-2">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 bg-white border-gray-200"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              className="bg-[#0066CC] hover:bg-blue-700 rounded-full h-10 w-10"
+              onClick={handleSendMessage}
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
 
-      {showAddressForm && (
-        <AddressForm
-          onSubmit={handleAddressSubmit}
-          onClose={() => setShowAddressForm(false)}
-          onCancel={handleAddressCancel}
-        />
-      )}
+        {showTaxBreakdown && (
+          <TaxBreakdown
+            data={mockChatResponses.taxBreakdown.taxBreakdown}
+            onMakePayment={handlePayment}
+            onSetupAutoPay={() => {
+              setShowTaxBreakdown(false);
+              setShowAutoPaySetup(true);
+            }}
+            onClose={() => {
+              setShowTaxBreakdown(false);
+              showOptionsWithMessage();
+            }}
+            onCancel={() => {
+              setShowTaxBreakdown(false);
+              showOptionsWithMessage();
+            }}
+          />
+        )}
 
-      {showPaymentForm && (
-        <PaymentForm
-          onSubmit={handlePaymentVerification}
-          onClose={() => setShowPaymentForm(false)}
-          onCancel={handlePaymentCancel}
-        />
-      )}
-
-      {showTaxBreakdown && (
-        <TaxBreakdown
-          data={mockChatResponses.taxReminder.taxBreakdown}
-          onMakePayment={handlePayment}
-          onSetupAutoPay={() => {
-            setShowTaxBreakdown(false);
-            setShowAutoPaySetup(true);
-          }}
-          onClose={handleTaxBreakdownClose}
-          onCancel={handleTaxBreakdownCancel}
-        />
-      )}
-
-      {showAutoPaySetup && (
-        <AutoPaySetup
-          userData={mockUserData}
-          onSetupAutoPay={handleAutoPaySetup}
-          onClose={() => {
-            setShowAutoPaySetup(false);
-            showOptionsWithMessage();
-          }}
-          onCancel={handleAutoPayCancel}
-        />
-      )}
-    </>
+        {showAutoPaySetup && (
+          <AutoPaySetup
+            userData={mockUserData}
+            onSetupAutoPay={handleAutoPaySetup}
+            onClose={() => {
+              setShowAutoPaySetup(false);
+              showOptionsWithMessage();
+            }}
+            onCancel={handleAutoPayCancel}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
   );
 };
 

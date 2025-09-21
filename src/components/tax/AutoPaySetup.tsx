@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, CreditCard, Info, Check, ShieldCheck } from "lucide-react";
+import { Calendar, Info, Check, ShieldCheck } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -11,10 +11,15 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-import { UserData } from "@/types/chat";
 
 interface AutoPaySetupProps {
-  userData: UserData;
+  userData: {
+    autoPayEnabled: boolean;
+    monthlyPayment: number;
+    dueDate: number;
+    bankName: string;
+    accountLast4: string;
+  };
   onSetupAutoPay: (enabled: boolean) => void;
   onClose: () => void;
   onCancel?: () => void;
@@ -46,7 +51,9 @@ const AutoPaySetup = ({
 
   const handleConfirm = () => {
     setShowSuccess(true);
-    triggerConfetti();
+    if (isEnabled) {
+      triggerConfetti();
+    }
     setTimeout(() => {
       onSetupAutoPay(isEnabled);
       onClose();
@@ -61,47 +68,36 @@ const AutoPaySetup = ({
     }
   };
 
-  // Get payment details from either direct properties or propertyDetails
-  const monthlyPayment =
-    userData.monthlyPayment || userData.propertyDetails.monthlyPayment;
-  const dueDate =
-    userData.dueDate ||
-    new Date(userData.propertyDetails.nextDueDate).getDate();
-  const bankName =
-    userData.bankName || userData.paymentMethod?.bankName || "Your Bank";
-  const accountLast4 =
-    userData.accountLast4 || userData.paymentMethod?.lastFourDigits || "****";
-
   if (showSuccess) {
     return (
       <Dialog open onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md bg-white text-center">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl font-semibold text-mrcooper-blue text-center flex items-center justify-center gap-2">
-                <ShieldCheck className="h-6 w-6 text-mrcooper-blue" />
+              <DialogTitle className="text-xl font-semibold text-[#0066CC] text-center flex items-center justify-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-[#0066CC]" />
                 AutoPay {isEnabled ? "Enabled" : "Disabled"}
               </DialogTitle>
               <DialogClose
-                className="h-6 w-6 text-gray-500 hover:text-mrcooper-blue"
+                className="h-6 w-6 text-gray-500 hover:text-[#0066CC]"
                 onClick={handleClose}
               />
             </div>
           </DialogHeader>
           <div className="py-8 space-y-4">
-            <div className="mx-auto w-12 h-12 rounded-full bg-mrcooper-beige/20 flex items-center justify-center">
-              <Check className="h-6 w-6 text-mrcooper-blue" />
+            <div className="mx-auto w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+              <Check className="h-6 w-6 text-[#0066CC]" />
             </div>
-            <h2 className="text-2xl font-semibold text-mrcooper-blue">
+            <h2 className="text-2xl font-semibold text-[#0066CC]">
               AutoPay {isEnabled ? "Enabled" : "Disabled"}
             </h2>
             <p className="text-gray-600">
               {isEnabled
-                ? `Your monthly payment of $${monthlyPayment.toFixed(
+                ? `Your monthly payment of $${userData.monthlyPayment.toFixed(
                     2
-                  )} will be automatically processed on the ${dueDate}${getOrdinalSuffix(
-                    dueDate
-                  )} of each month.`
+                  )} will be automatically processed on the ${
+                    userData.dueDate
+                  }${getOrdinalSuffix(userData.dueDate)} of each month.`
                 : "AutoPay has been disabled. You'll need to make manual payments going forward."}
             </p>
           </div>
@@ -115,16 +111,16 @@ const AutoPaySetup = ({
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
           <div className="flex justify-between items-center">
-            <DialogTitle className="text-xl font-semibold text-mrcooper-blue">
+            <DialogTitle className="text-xl font-semibold text-[#0066CC]">
               AutoPay Setup
             </DialogTitle>
             <DialogClose
-              className="h-6 w-6 text-gray-500 hover:text-mrcooper-blue"
+              className="h-6 w-6 text-gray-500 hover:text-[#0066CC]"
               onClick={handleClose}
             />
           </div>
           <DialogDescription className="text-gray-600">
-            Automatically pay your monthly mortgage and avoid late fees
+            Automatically pay your monthly EMI and avoid late fees
           </DialogDescription>
         </DialogHeader>
 
@@ -141,36 +137,26 @@ const AutoPaySetup = ({
             <Switch
               checked={isEnabled}
               onCheckedChange={handleToggle}
-              className="flex-shrink-0 data-[state=checked]:bg-mrcooper-blue"
+              className="flex-shrink-0 data-[state=checked]:bg-[#0066CC]"
             />
           </div>
 
           <div className="rounded-lg border border-gray-200 p-4 space-y-4 bg-gray-50">
             <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-mrcooper-blue mt-1" />
+              <Calendar className="h-5 w-5 text-[#0066CC] mt-1" />
               <div>
                 <p className="font-medium text-gray-900">Payment Schedule</p>
                 <p className="text-sm text-gray-600">
-                  Monthly payment of ${monthlyPayment.toFixed(2)}
+                  Monthly payment of ${userData.monthlyPayment.toFixed(2)}
                   <br />
-                  Due on the {dueDate}
-                  {getOrdinalSuffix(dueDate)} of each month
+                  Due on the {userData.dueDate}
+                  {getOrdinalSuffix(userData.dueDate)} of each month
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <CreditCard className="h-5 w-5 text-mrcooper-blue mt-1" />
-              <div>
-                <p className="font-medium text-gray-900">Payment Method</p>
-                <p className="text-sm text-gray-600">
-                  {bankName} (****{accountLast4})
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 bg-mrcooper-beige/20 p-4 rounded-md">
-              <Info className="h-5 w-5 text-mrcooper-blue mt-1 flex-shrink-0" />
+            <div className="flex items-start gap-3 bg-blue-50 p-4 rounded-md">
+              <Info className="h-5 w-5 text-[#0066CC] mt-1 flex-shrink-0" />
               <div className="text-sm text-gray-700">
                 <p className="font-medium mb-2">Important Information</p>
                 <ul className="list-disc ml-4 space-y-2">
@@ -193,13 +179,13 @@ const AutoPaySetup = ({
                   setIsEnabled(!isEnabled);
                   setIsConfirming(false);
                 }}
-                className="w-full sm:w-auto border-mrcooper-blue text-mrcooper-blue hover:bg-mrcooper-beige/10"
+                className="w-full sm:w-auto border-[#0066CC] text-[#0066CC] hover:bg-blue-50"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleConfirm}
-                className="w-full sm:w-auto bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white font-medium"
+                className="w-full sm:w-auto bg-[#0066CC] hover:bg-blue-700 text-white font-medium"
               >
                 {isEnabled ? "Enable" : "Disable"} AutoPay
               </Button>

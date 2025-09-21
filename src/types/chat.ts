@@ -3,34 +3,18 @@ export interface Message {
   type: "user" | "assistant";
   content: string;
   timestamp: Date;
-  recommendations?: ProductRecommendation[];
-  kycVerification?: KYCVerification;
   taxBreakdown?: TaxBreakdown;
-}
-
-export interface KYCVerification {
-  status: "pending" | "in_progress" | "completed" | "failed";
-  steps: {
-    imageVerification: KYCStep;
-    addressVerification: KYCStep;
-    paymentVerification: KYCStep;
-  };
-  documents: {
-    selfie?: string;
-    idProof?: string;
-    addressProof?: string;
-  };
-}
-
-export interface KYCStep {
-  status: "pending" | "in_progress" | "completed" | "failed";
-  message?: string;
-  errorMessage?: string;
 }
 
 export interface TaxBreakdown {
   propertyId: string;
   address: string;
+  propertyValue: number;
+  annualTaxRate: number;
+  previousTaxRate: number;
+  lastAssessmentDate: string;
+  nextAssessmentDate: string;
+  propertyAppreciation: number;
   unpaidMonths: {
     month: string;
     year: number;
@@ -42,26 +26,6 @@ export interface TaxBreakdown {
   totalAmount: number;
   totalLateFees: number;
   autoPayEnabled: boolean;
-}
-
-export interface ProductRecommendation {
-  title: string;
-  description: string;
-  discount?: number;
-  savings?: number;
-  products: Product[];
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image?: string;
-}
-
-export interface CartItem extends Product {
-  quantity: number;
 }
 
 export interface UserData {
@@ -76,7 +40,6 @@ export interface UserData {
     monthlyPayment: number;
     nextDueDate: string;
   };
-  kycStatus: KYCVerification["status"];
   paymentMethod?: {
     type: "bank" | "card";
     lastFourDigits: string;
