@@ -4,7 +4,6 @@ import {
   TrendingUp,
   Info,
   AlertTriangle,
-  DollarSign,
   Building2,
   ArrowUpRight,
 } from "lucide-react";
