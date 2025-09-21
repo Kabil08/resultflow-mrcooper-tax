@@ -1,36 +1,29 @@
 import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import FloatingChatButton from "@/components/FloatingChatButton";
-import ChatDialog from "@/components/ChatDialog";
+import ChatDialog from "./components/ChatDialog";
+import FloatingChatButton from "./components/FloatingChatButton";
 import "./App.css";
 
-function HimsIframe() {
-  const [isChatOpen, setIsChatOpen] = useState(false);
+function App() {
+  const [showChat, setShowChat] = useState(false);
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-hidden">
-      <div className="relative w-full h-full z-0">
+    <div className="relative w-screen h-screen overflow-hidden">
+      {/* Iframe container */}
+      <div className="absolute inset-0 w-full h-full">
         <iframe
-          src="https://www.hims.com"
+          src="https://www.mrcooper.com"
           className="w-full h-full border-0"
-          title="Hims Website"
+          title="Mr. Cooper Website"
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />
       </div>
+
+      {/* Chat UI layer */}
       <div className="relative z-50">
-        <FloatingChatButton onClick={() => setIsChatOpen(true)} />
-        <ChatDialog isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        <FloatingChatButton onClick={() => setShowChat(true)} />
+        <ChatDialog isOpen={showChat} onClose={() => setShowChat(false)} />
       </div>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HimsIframe />} />
-      </Routes>
-    </Router>
   );
 }
 

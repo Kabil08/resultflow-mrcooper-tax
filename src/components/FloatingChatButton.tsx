@@ -1,25 +1,29 @@
-import { MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { MessageSquare } from "lucide-react";
+import Logo from "@/components/ui/logo";
 
 interface FloatingChatButtonProps {
   onClick: () => void;
 }
 
 const FloatingChatButton = ({ onClick }: FloatingChatButtonProps) => {
-  const isMobile = useIsMobile();
-
   return (
-    <Button
-      className={`fixed ${
-        isMobile ? "bottom-4 right-4 w-12 h-12" : "bottom-6 right-6 w-14 h-14"
-      } rounded-full bg-hims-brown hover:bg-hims-brown-dark shadow-lg z-[9999] touch-none`}
-      onClick={onClick}
-    >
-      <MessageCircle
-        className={`${isMobile ? "h-5 w-5" : "h-6 w-6"} text-white`}
-      />
-    </Button>
+    <div className="fixed bottom-4 right-4 z-[9999]">
+      <button
+        onClick={onClick}
+        className="h-14 w-14 rounded-full bg-mrcooper-blue hover:bg-mrcooper-blue-dark shadow-lg flex items-center justify-center transition-all duration-200 relative group"
+      >
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <Logo size="sm" className="rounded-sm" />
+        </div>
+        <MessageSquare
+          className="h-7 w-7 group-hover:opacity-0 transition-opacity duration-200"
+          color="white"
+          strokeWidth={2.5}
+          aria-hidden="true"
+        />
+        <span className="sr-only">Open chat</span>
+      </button>
+    </div>
   );
 };
 

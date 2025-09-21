@@ -1,7 +1,20 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",
@@ -37,17 +50,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        hims: {
-          brown: {
-            DEFAULT: "#8E6E54",
-            dark: "#7D5F45",
-            light: "#A68B75",
-          },
-          beige: {
-            DEFAULT: "#F5F1ED",
-            dark: "#E5DED6",
-            light: "#FAF7F4",
-          },
+        mrcooper: {
+          blue: "#0066CC",
+          "blue-dark": "#004C99",
+          beige: "#F5F1ED",
+          "beige-light": "#FAF9F7",
+          gray: "#666666",
+          success: "#28A745",
+          warning: "#FFC107",
+          error: "#DC3545",
         },
       },
       borderRadius: {
@@ -57,18 +68,17 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
+          from: { height: 0 },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          to: { height: 0 },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "bounce-slow": "bounce 1.5s ease-in-out infinite",
       },
     },
   },

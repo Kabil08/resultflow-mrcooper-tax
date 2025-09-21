@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Send, Bot, User, Sparkles, Check } from "lucide-react";
+import { X, Send, Bot, User } from "lucide-react";
 import Markdown from "markdown-to-jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,31 @@ import {
 } from "@/components/ui/sheet";
 import {
   Message,
-  ProductRecommendation,
-  CartItem,
-  Product,
+  KYCVerification,
+  TaxBreakdown as TaxBreakdownType,
 } from "@/types/chat";
-import { mockRecommendations } from "@/data/mockData";
-import SmartCartForHims from "./SmartCartForHims";
+import { mockChatResponses, mockUserData } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ImageVerification from "./kyc/ImageVerification";
+import AddressForm from "./kyc/AddressForm";
+import PaymentForm from "./kyc/PaymentForm";
+import TaxBreakdown from "./tax/TaxBreakdown";
+import AutoPaySetup from "./tax/AutoPaySetup";
+import Logo from "@/components/ui/logo";
 
 interface ChatDialogProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface PaymentVerificationData {
+  type: "bank" | "card";
+  accountNumber?: string;
+  routingNumber?: string;
+  cardNumber?: string;
+  expiryDate?: string;
+  cvv?: string;
+  bankName?: string;
 }
 
 const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
@@ -31,246 +45,186 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     {
       id: "1",
       type: "assistant",
-      content:
-        "Hi! I'm your personal care assistant. Based on your profile and preferences, here's what we have analyzed:\n\n" +
-        "**🔍 Your Self-Described Conditions:**\n" +
-        "• Early-stage hair thinning\n" +
-        "• Occasional stress and anxiety\n\n" +
-        "**📋 Your Medical History:**\n" +
-        "• No contraindications\n\n" +
-        "**🍽️ Food Allergies Analysis:**\n" +
-        "• **Dairy sensitivity** - may contribute to hormonal imbalance\n" +
-        "• **Gluten intolerance** - linked to nutrient absorption issues\n" +
-        "• **Soy allergy** - can affect hormone regulation\n\n" +
-        "Addressing these food sensitivities alongside treatment can improve overall results.\n\n" +
-        "Based on this, we recommend our Complete Hair Loss Treatment (AI) package:",
+      content: mockChatResponses.initial.content,
       timestamp: new Date(),
-      recommendations: [mockRecommendations.hair],
-    },
-    {
-      id: "2",
-      type: "assistant",
-      content:
-        "Based on our analysis of your skin type and concerns, we've found some skin care products that may work well for you:\n\n" +
-        "**🔍 Your Skin Analysis:**\n" +
-        "• Combination skin type\n" +
-        "• Mild sensitivity\n" +
-        "• Early signs of aging\n\n" +
-        "**✨ Personalized Recommendations:**\n" +
-        "Here are some products specifically chosen for your skin profile:",
-      timestamp: new Date(),
-      recommendations: [mockRecommendations.skin],
     },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showSmartCart, setShowSmartCart] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [showImageVerification, setShowImageVerification] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showTaxBreakdown, setShowTaxBreakdown] = useState(false);
+  const [showAutoPaySetup, setShowAutoPaySetup] = useState(false);
+  const [showOptions, setShowOptions] = useState<boolean>(true);
+  const [kycStatus, setKycStatus] = useState<KYCVerification>(
+    mockChatResponses.kycIntro.kycVerification
+  );
+
+  const showOptionsWithMessage = () => {
+    setShowOptions(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "assistant",
+        content:
+          "Is there anything else I can help you with?\n\nYou can:\n1. Complete KYC Verification\n2. Check Tax/EMI Payments",
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  const handleOptionSelect = (option: string) => {
+    setShowOptions(false);
+
+    if (option === "Complete KYC Verification") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: "user",
+          content: option,
+          timestamp: new Date(),
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: mockChatResponses.kycIntro.content,
+          timestamp: new Date(),
+          kycVerification: mockChatResponses.kycIntro.kycVerification,
+        },
+      ]);
+      setShowImageVerification(true);
+    } else if (option === "Check Tax/EMI Payments") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: "user",
+          content: option,
+          timestamp: new Date(),
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: mockChatResponses.taxReminder.content,
+          timestamp: new Date(),
+          taxBreakdown: mockChatResponses.taxReminder.taxBreakdown,
+        },
+      ]);
+      setShowTaxBreakdown(true);
+    }
+  };
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: inputValue.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessage = inputValue.trim();
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const response = getAIResponse(inputValue.trim());
-      const assistantMessage: Message = {
+    setMessages((prev) => [
+      ...prev,
+      {
         id: Date.now().toString(),
-        type: "assistant",
-        content: response.content,
+        type: "user",
+        content: userMessage,
         timestamp: new Date(),
-        recommendations: response.recommendations,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      },
+    ]);
+
+    setTimeout(() => {
+      const response = getAIResponse(userMessage);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: "assistant",
+          content: response.content,
+          timestamp: new Date(),
+        },
+      ]);
       setIsTyping(false);
+      showOptionsWithMessage();
     }, 1000 + Math.random() * 1000);
   };
 
   const getAIResponse = (
     userMessage: string
-  ): { content: string; recommendations?: ProductRecommendation[] } => {
+  ): {
+    content: string;
+    kycVerification?: KYCVerification;
+    taxBreakdown?: TaxBreakdownType;
+    showImageVerification?: boolean;
+    showAddressForm?: boolean;
+    showPaymentForm?: boolean;
+    showTaxBreakdown?: boolean;
+    showAutoPaySetup?: boolean;
+  } => {
     const lowerMessage = userMessage.toLowerCase();
 
-    // Hair Loss
+    // KYC Flow
     if (
-      lowerMessage.includes("hair loss") ||
-      lowerMessage.includes("hair regrowth") ||
-      lowerMessage.includes("balding") ||
-      lowerMessage.includes("hair growth") ||
-      lowerMessage.includes("thinning hair")
+      lowerMessage.includes("start verification") ||
+      lowerMessage.includes("verify") ||
+      lowerMessage.includes("kyc") ||
+      lowerMessage.includes("yes") ||
+      lowerMessage.includes("ready")
     ) {
-      return {
-        content:
-          "We offer a comprehensive hair loss treatment plan that includes:\n\n" +
-          "• Finasteride (1mg) - blocks DHT to prevent further hair loss\n" +
-          "• Minoxidil 5% Solution - stimulates hair regrowth\n" +
-          "• Biotin Gummies - supports healthy hair growth\n" +
-          "• Thickening Shampoo - improves hair appearance\n\n" +
-          "Would you like to learn more about how these treatments work together for maximum effectiveness?",
-        recommendations: [mockRecommendations.hair],
-      };
+      if (kycStatus.steps.imageVerification.status === "pending") {
+        return {
+          content: mockChatResponses.kycImageVerification.content,
+          showImageVerification: true,
+        };
+      } else if (kycStatus.steps.addressVerification.status === "pending") {
+        return {
+          content: mockChatResponses.kycAddressVerification.content,
+          showAddressForm: true,
+        };
+      } else if (kycStatus.steps.paymentVerification.status === "pending") {
+        return {
+          content: mockChatResponses.kycPaymentVerification.content,
+          showPaymentForm: true,
+        };
+      }
     }
 
-    // Weight Loss
+    // Tax/EMI Flow
     if (
-      lowerMessage.includes("weight") ||
-      lowerMessage.includes("lose weight") ||
-      lowerMessage.includes("diet") ||
-      lowerMessage.includes("appetite") ||
-      lowerMessage.includes("metabolism")
-    ) {
-      return {
-        content:
-          "Our weight management program includes FDA-approved medications and comprehensive support:\n\n" +
-          "• Semaglutide (GLP-1) - clinically proven for significant weight loss\n" +
-          "• Appetite Management medication - helps control food cravings\n" +
-          "• Personalized Weight Loss Program - includes nutrition guidance\n" +
-          "• Metabolism Support - supplements to support your journey\n\n" +
-          "Would you like to explore these options and find the right combination for your goals?",
-        recommendations: [mockRecommendations.weightLoss],
-      };
-    }
-
-    // Skin Care
-    if (
-      lowerMessage.includes("skin") ||
-      lowerMessage.includes("acne") ||
-      lowerMessage.includes("aging") ||
-      lowerMessage.includes("wrinkles") ||
-      lowerMessage.includes("dark spots")
-    ) {
-      return {
-        content:
-          "Based on your profile and preferences, here's what we have analyzed for your skin care needs:\n\n" +
-          "**🔍 Your Self-Described Skin Conditions:**\n" +
-          "• Uneven skin tone\n" +
-          "• Occasional breakouts\n" +
-          "• Early signs of aging\n\n" +
-          "**📋 Your Medical History:**\n" +
-          "• No active skin conditions\n" +
-          "• No adverse reactions to retinoids\n\n" +
-          "**🍽️ Food Allergies Analysis:**\n" +
-          "• **Peanut allergy** - may cause skin inflammation and rashes\n" +
-          "• **Shellfish sensitivity** - linked to skin reactions and breakouts\n" +
-          "• **Egg allergy** - can affect skin barrier function\n\n" +
-          "Based on this comprehensive analysis, here are our recommended treatments:\n\n" +
-          "• Tretinoin Cream 0.025% - prescription-strength retinoid for acne and anti-aging\n" +
-          "• Advanced Anti-Aging Serum - with peptides and antioxidants\n" +
-          "• Gentle Cleanser - suitable for all skin types\n" +
-          "• Dark Spot Treatment - targets hyperpigmentation\n\n" +
-          "What specific skin concerns would you like to address?",
-        recommendations: [mockRecommendations.skin],
-      };
-    }
-
-    // Mental Health
-    if (
-      lowerMessage.includes("anxiety") ||
-      lowerMessage.includes("stress") ||
-      lowerMessage.includes("depression") ||
-      lowerMessage.includes("mental health") ||
-      lowerMessage.includes("sleep") ||
-      lowerMessage.includes("therapy")
-    ) {
-      return {
-        content:
-          "We provide comprehensive mental health support including:\n\n" +
-          "• Escitalopram 10mg - FDA-approved medication for anxiety and depression\n" +
-          "• Online Therapy - convenient sessions with licensed professionals\n" +
-          "• Stress Management Kit - tools and techniques for daily anxiety relief\n" +
-          "• Sleep Support - natural supplement for better rest\n\n" +
-          "Would you like to learn more about any of these options?",
-        recommendations: [mockRecommendations.mental],
-      };
-    }
-
-    // Delivery Process
-    if (
-      lowerMessage.includes("delivery") ||
-      lowerMessage.includes("shipping") ||
-      lowerMessage.includes("track") ||
-      lowerMessage.includes("order status") ||
-      lowerMessage.includes("when will") ||
-      lowerMessage.includes("how long") ||
-      lowerMessage.includes("receive")
-    ) {
-      return {
-        content:
-          "🚚 **AI Smart Delivery!**\n\n" +
-          "✅ **Free express delivery** within 24 hours for orders over $500\n\n" +
-          "✅ **Same-day delivery** available in select cities\n\n" +
-          "✅ **Smart packaging** with eco-friendly materials\n\n" +
-          "✅ **Real-time tracking** with AI-powered updates\n\n" +
-          "✅ **Contactless delivery** options\n\n" +
-          "📦 Your orders will be delivered faster with our AI logistics optimization!",
-      };
-    }
-
-    // Bank Offers and EMI
-    if (
+      lowerMessage.includes("payment") ||
+      lowerMessage.includes("tax") ||
       lowerMessage.includes("emi") ||
-      lowerMessage.includes("bank offer") ||
-      lowerMessage.includes("payment option") ||
-      lowerMessage.includes("installment") ||
-      lowerMessage.includes("credit card") ||
-      lowerMessage.includes("debit card") ||
-      lowerMessage.includes("discount")
+      lowerMessage.includes("due") ||
+      lowerMessage.includes("late fee")
     ) {
       return {
-        content:
-          "💳 **AI Payment Optimizer!**\n\n" +
-          "✅ **No-cost EMI** available on orders above $99\n\n" +
-          "✅ **Flexible EMI options** with 3, 6, and 12-month plans\n\n" +
-          "✅ **10% instant discount** up to $30 with HIMS Credit Card\n\n" +
-          "✅ **Additional 5% off** with HIMS Debit Card\n\n" +
-          "✅ **Special discounts** on subscription plans\n\n" +
-          "💰 Save more with our exclusive banking partners!",
+        content: mockChatResponses.taxReminder.content,
+        taxBreakdown: mockChatResponses.taxReminder.taxBreakdown,
+        showTaxBreakdown: true,
       };
     }
 
-    // Subscription and Refills
+    // AutoPay Flow
     if (
-      lowerMessage.includes("subscription") ||
-      lowerMessage.includes("refill") ||
-      lowerMessage.includes("cancel") ||
-      lowerMessage.includes("pause") ||
-      lowerMessage.includes("monthly") ||
-      lowerMessage.includes("automatic")
+      lowerMessage.includes("autopay") ||
+      lowerMessage.includes("auto pay") ||
+      lowerMessage.includes("automatic payment")
     ) {
       return {
-        content:
-          "🔄 **Smart Subscription Benefits!**\n\n" +
-          "✅ **Save 20%** on monthly subscriptions\n\n" +
-          "✅ **Free shipping** on all refills\n\n" +
-          "✅ **Flexible schedule** for deliveries\n\n" +
-          "✅ **Easy management** - pause or cancel anytime\n\n" +
-          "✅ **Auto refills** before you run out\n\n" +
-          "🎁 Join our subscription program for the best value!",
+        content: mockChatResponses.autopaySetup.content,
+        showAutoPaySetup: true,
       };
     }
 
-    // Default response with overview of all services
+    // Default response
     return {
       content:
-        "I can help you with several health concerns including:\n\n" +
-        "• Hair Loss Treatment - Finasteride, Minoxidil, and more\n" +
-        "• Weight Management - GLP-1 medications and support programs\n" +
-        "• Skincare Solutions - Tretinoin and anti-aging treatments\n" +
-        "• Mental Health Support - Medication and therapy services\n\n" +
-        "What specific health concern would you like to discuss?",
+        "I can help you with:\n\n" +
+        "1. KYC Verification\n" +
+        "2. Tax/EMI Payments\n" +
+        "3. AutoPay Setup\n\n" +
+        "What would you like to do?",
     };
   };
 
@@ -280,173 +234,163 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     }
   };
 
-  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity === 0) {
-      setCartItems((prev) => prev.filter((item) => item.id !== productId));
-      return;
+  const handleImageCapture = (type: "selfie" | "idProof", image: string) => {
+    const updatedKycStatus = { ...kycStatus };
+    updatedKycStatus.documents[type] = image;
+    if (type === "selfie" && !updatedKycStatus.documents.idProof) {
+      updatedKycStatus.steps.imageVerification.status = "in_progress";
+    } else if (type === "idProof") {
+      updatedKycStatus.steps.imageVerification.status = "completed";
+      setKycStatus(updatedKycStatus);
+
+      // Add success message and prompt for address verification
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: "assistant",
+          content:
+            "Great! Your ID has been verified successfully. Now, let's verify your address.",
+          timestamp: new Date(),
+        },
+      ]);
     }
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    setKycStatus(updatedKycStatus);
   };
 
-  const handleSelectProduct = (productId: string) => {
-    setSelectedProducts((prev) => ({
+  const handleAddressSubmit = (data: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    proofDocument?: string;
+  }) => {
+    const updatedKycStatus = { ...kycStatus };
+    updatedKycStatus.steps.addressVerification.status = "completed";
+    updatedKycStatus.documents.addressProof = data.proofDocument;
+    setKycStatus(updatedKycStatus);
+
+    // Add success message
+    setMessages((prev) => [
       ...prev,
-      [productId]: !prev[productId],
-    }));
+      {
+        id: Date.now().toString(),
+        type: "assistant",
+        content:
+          "Great! Your address has been verified. Let's proceed with payment verification.",
+        timestamp: new Date(),
+      },
+    ]);
+
+    // Smooth transition to payment form
+    setShowAddressForm(false);
+    setTimeout(() => {
+      setShowPaymentForm(true);
+    }, 100);
   };
 
-  const handleSelectAllProducts = (products: Product[]) => {
-    const allSelected = products.every(
-      (product) => selectedProducts[product.id]
-    );
-    const newSelectedProducts = { ...selectedProducts };
+  const handlePaymentVerification = (data: PaymentVerificationData) => {
+    const updatedKycStatus = { ...kycStatus };
+    updatedKycStatus.steps.paymentVerification.status = "completed";
+    setKycStatus(updatedKycStatus);
+    setShowPaymentForm(false);
 
-    products.forEach((product) => {
-      newSelectedProducts[product.id] = !allSelected;
-    });
-
-    setSelectedProducts(newSelectedProducts);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "assistant",
+        content: `Payment information verified successfully using ${
+          data.type === "bank" ? "bank account" : "credit card"
+        }.\n\nIs there anything else I can help you with?`,
+        timestamp: new Date(),
+      },
+    ]);
+    showOptionsWithMessage();
   };
 
-  const handleAddSelectedToCart = (products: Product[]) => {
-    const selectedProductIds = Object.entries(selectedProducts)
-      .filter((entry) => entry[1])
-      .map((entry) => entry[0]);
-
-    const productsToAdd = products.filter((product) =>
-      selectedProductIds.includes(product.id)
-    );
-
-    if (productsToAdd.length === 0) {
-      return;
-    }
-
-    setCartItems((prev) => {
-      const newItems = [...prev];
-      productsToAdd.forEach((product) => {
-        const existingItem = newItems.find((item) => item.id === product.id);
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          newItems.push({ ...product, quantity: 1 });
-        }
-      });
-      return newItems;
-    });
-
-    setShowSmartCart(true);
-    setSelectedProducts({});
+  const handleAutoPaySetup = (enabled: boolean) => {
+    setShowAutoPaySetup(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "assistant",
+        content: `AutoPay has been ${
+          enabled ? "enabled" : "disabled"
+        } successfully.`,
+        timestamp: new Date(),
+      },
+    ]);
+    showOptionsWithMessage();
   };
 
-  const renderRecommendation = (recommendation: ProductRecommendation) => {
-    const allSelected = recommendation.products.every(
-      (product) => selectedProducts[product.id]
-    );
-
-    return (
-      <div className="mt-2 p-4 bg-white rounded-lg border border-hims-brown/20">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-hims-brown flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            {recommendation.title}
-          </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-sm"
-            onClick={() => handleSelectAllProducts(recommendation.products)}
-          >
-            {allSelected ? "Deselect All" : "Select All"}
-          </Button>
-        </div>
-        <p className="text-sm text-gray-600 mt-1">
-          {recommendation.description}
-        </p>
-        <div className="mt-2 space-y-4">
-          {recommendation.products.map((product) => (
-            <div key={product.id} className="flex items-center gap-4">
-              <div
-                className="w-6 h-6 rounded border border-hims-brown/20 flex items-center justify-center cursor-pointer hover:bg-hims-beige"
-                onClick={() => handleSelectProduct(product.id)}
-              >
-                {selectedProducts[product.id] && (
-                  <Check className="h-4 w-4 text-hims-brown" />
-                )}
-              </div>
-              <div className="w-20 h-20 bg-hims-beige rounded-lg overflow-hidden shrink-0">
-                <img
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium">{product.name}</p>
-                <p className="text-sm text-gray-500">
-                  ${product.price.toFixed(2)}/mo
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-        {recommendation.discount && (
-          <p className="mt-4 text-sm text-green-600 flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            Save {recommendation.discount}% ($
-            {recommendation.savings?.toFixed(2)})
-          </p>
-        )}
-        <Button
-          size="sm"
-          className="mt-4 w-full bg-hims-brown hover:bg-hims-brown-dark text-white"
-          onClick={() => handleAddSelectedToCart(recommendation.products)}
-          disabled={
-            !recommendation.products.some(
-              (product) => selectedProducts[product.id]
-            )
-          }
-        >
-          Add Selected to Cart
-        </Button>
-      </div>
-    );
+  const handleVerificationCancel = () => {
+    setShowImageVerification(false);
+    showOptionsWithMessage();
   };
 
-  // Handle direct button close
-  const handleButtonClose = () => {
-    onClose();
+  const handleAddressCancel = () => {
+    setShowAddressForm(false);
+    showOptionsWithMessage();
   };
 
-  // Handle sheet close
-  const handleSheetClose = (open: boolean) => {
-    if (!open) {
-      onClose();
-    }
+  const handlePaymentCancel = () => {
+    setShowPaymentForm(false);
+    showOptionsWithMessage();
+  };
+
+  const handleTaxBreakdownCancel = () => {
+    setShowTaxBreakdown(false);
+    showOptionsWithMessage();
+  };
+
+  const handleAutoPayCancel = () => {
+    setShowAutoPaySetup(false);
+    showOptionsWithMessage();
+  };
+
+  const handleTaxBreakdownClose = () => {
+    setShowTaxBreakdown(false);
+    showOptionsWithMessage();
+  };
+
+  const handlePayment = (selectedMonths: string[]) => {
+    setShowTaxBreakdown(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "assistant",
+        content: `Payment successful! You've paid for ${selectedMonths.join(
+          ", "
+        )}.\n\nIs there anything else I can help you with?`,
+        timestamp: new Date(),
+      },
+    ]);
+    showOptionsWithMessage();
   };
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={handleSheetClose}>
+      <Sheet open={isOpen} onOpenChange={() => onClose()}>
         <SheetContent
           side={isMobile ? "bottom" : "right"}
           className={`${
             isMobile
-              ? "h-[85vh] border-t rounded-t-[10px] p-0 flex flex-col"
-              : "w-full md:w-[50vw] lg:w-[45vw] p-0 border-l-0 sm:border-l bg-hims-beige flex flex-col"
+              ? "h-[85vh] border-t rounded-t-[10px] p-0 flex flex-col bg-white"
+              : "w-full md:w-[50vw] lg:w-[45vw] p-0 border-l-0 sm:border-l bg-white flex flex-col"
           }`}
         >
-          <SheetHeader className="p-4 border-b bg-hims-brown sticky top-0 z-50 flex-shrink-0">
+          <SheetHeader className="p-4 border-b bg-mrcooper-blue sticky top-0 z-50 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                <Logo size="md" className="rounded-md" />
                 <div>
                   <SheetTitle className="text-xl font-semibold text-white">
-                    Care Assistant
+                    Mr. Cooper Assistant
                   </SheetTitle>
-                  <SheetDescription className="text-sm text-hims-beige/80 flex items-center gap-1">
+                  <SheetDescription className="text-sm text-mrcooper-beige/80">
                     Powered by ResultFlow.ai
                   </SheetDescription>
                 </div>
@@ -454,7 +398,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleButtonClose}
+                onClick={onClose}
                 className="h-10 w-10 text-white hover:text-white/80"
               >
                 <X className="h-5 w-5" />
@@ -462,49 +406,64 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
             </div>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto bg-mrcooper-beige-light">
+            <div className="flex flex-col gap-4 p-4">
               {messages.map((message) => (
-                <div key={message.id}>
-                  <div
-                    className={`flex items-start gap-3 ${
-                      message.type === "user" ? "flex-row-reverse" : ""
-                    }`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                        message.type === "user"
-                          ? "bg-hims-brown"
-                          : "bg-hims-beige border border-hims-brown"
-                      }`}
-                    >
-                      {message.type === "user" ? (
-                        <User className="h-5 w-5 text-white" />
-                      ) : (
-                        <Bot className="h-5 w-5 text-hims-brown" />
-                      )}
+                <div
+                  key={message.id}
+                  className={`flex items-start gap-3 ${
+                    message.type === "assistant"
+                      ? "bg-white rounded-lg shadow-sm p-4"
+                      : "bg-mrcooper-blue/5 rounded-lg p-4 ml-4"
+                  }`}
+                >
+                  {message.type === "assistant" ? (
+                    <div className="w-8 h-8 rounded-full bg-mrcooper-blue flex items-center justify-center flex-shrink-0">
+                      <Bot className="h-5 w-5 text-white" />
                     </div>
-                    <div
-                      className={`rounded-lg px-4 py-2 max-w-[80%] ${
-                        message.type === "user"
-                          ? "bg-hims-brown text-white"
-                          : "bg-white border border-hims-brown/20"
-                      }`}
-                    >
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-gray-600" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      {message.type === "assistant"
+                        ? "Mr. Cooper Assistant"
+                        : "You"}
+                    </div>
+                    <div className="text-gray-700 whitespace-pre-wrap">
                       <Markdown
                         options={{
-                          forceBlock: true,
                           overrides: {
                             p: {
                               component: "p",
                               props: {
-                                className: "whitespace-pre-wrap",
+                                className: "mb-2",
                               },
                             },
                             strong: {
                               component: "strong",
                               props: {
-                                className: "font-semibold",
+                                className: "font-semibold text-gray-900",
+                              },
+                            },
+                            ul: {
+                              component: "ul",
+                              props: {
+                                className: "list-disc pl-4 mb-2",
+                              },
+                            },
+                            ol: {
+                              component: "ol",
+                              props: {
+                                className: "list-decimal pl-4 mb-2",
+                              },
+                            },
+                            li: {
+                              component: "li",
+                              props: {
+                                className: "mb-1",
                               },
                             },
                           },
@@ -514,59 +473,112 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                       </Markdown>
                     </div>
                   </div>
-                  {message.recommendations?.map((recommendation, index) => (
-                    <div key={index} className="ml-11 mt-2">
-                      {renderRecommendation(recommendation)}
-                    </div>
-                  ))}
                 </div>
               ))}
               {isTyping && (
-                <div className="flex items-center gap-2 text-hims-brown/60">
-                  <Bot className="h-5 w-5" />
-                  <span>Typing...</span>
+                <div className="flex items-center gap-2 text-gray-500 animate-pulse">
+                  <div className="w-2 h-2 rounded-full bg-current" />
+                  <div className="w-2 h-2 rounded-full bg-current" />
+                  <div className="w-2 h-2 rounded-full bg-current" />
                 </div>
               )}
             </div>
           </div>
 
-          <div className="p-4 border-t bg-white sticky bottom-0 flex-shrink-0 mt-auto">
-            <div className="flex items-center justify-center mb-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-hims-brown hover:bg-hims-beige flex items-center gap-2"
-              >
-                📞 Talk to expert
-              </Button>
-            </div>
-            <div className="flex gap-2">
+          <div className="p-4 border-t bg-white">
+            {showOptions && (
+              <div className="grid gap-2 mb-4">
+                <Button
+                  variant="default"
+                  className="w-full bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white"
+                  onClick={() =>
+                    handleOptionSelect("Complete KYC Verification")
+                  }
+                >
+                  Complete KYC Verification
+                </Button>
+                <Button
+                  variant="default"
+                  className="w-full bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white"
+                  onClick={() => handleOptionSelect("Check Tax/EMI Payments")}
+                >
+                  Check Tax/EMI Payments
+                </Button>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
               <Input
+                placeholder="Type your message..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
                 className="flex-1"
               />
               <Button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isTyping}
                 size="icon"
-                className="bg-hims-brown hover:bg-hims-brown-dark"
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim()}
+                className="bg-mrcooper-blue hover:bg-mrcooper-blue-dark text-white"
               >
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      <SmartCartForHims
-        isOpen={showSmartCart}
-        onClose={() => setShowSmartCart(false)}
-        cartItems={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-      />
+      {showImageVerification && (
+        <ImageVerification
+          onCapture={handleImageCapture}
+          onClose={() => setShowImageVerification(false)}
+          onNavigateToAddress={() => {
+            setShowImageVerification(false);
+            setShowAddressForm(true);
+          }}
+          onCancel={handleVerificationCancel}
+        />
+      )}
+
+      {showAddressForm && (
+        <AddressForm
+          onSubmit={handleAddressSubmit}
+          onClose={() => setShowAddressForm(false)}
+          onCancel={handleAddressCancel}
+        />
+      )}
+
+      {showPaymentForm && (
+        <PaymentForm
+          onSubmit={handlePaymentVerification}
+          onClose={() => setShowPaymentForm(false)}
+          onCancel={handlePaymentCancel}
+        />
+      )}
+
+      {showTaxBreakdown && (
+        <TaxBreakdown
+          data={mockChatResponses.taxReminder.taxBreakdown}
+          onMakePayment={handlePayment}
+          onSetupAutoPay={() => {
+            setShowTaxBreakdown(false);
+            setShowAutoPaySetup(true);
+          }}
+          onClose={handleTaxBreakdownClose}
+          onCancel={handleTaxBreakdownCancel}
+        />
+      )}
+
+      {showAutoPaySetup && (
+        <AutoPaySetup
+          userData={mockUserData}
+          onSetupAutoPay={handleAutoPaySetup}
+          onClose={() => {
+            setShowAutoPaySetup(false);
+            showOptionsWithMessage();
+          }}
+          onCancel={handleAutoPayCancel}
+        />
+      )}
     </>
   );
 };
