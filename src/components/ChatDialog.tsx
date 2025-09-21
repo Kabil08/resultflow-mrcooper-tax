@@ -213,7 +213,68 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                     : "bg-gray-100"
                 }`}
               >
-                <Markdown>{message.content}</Markdown>
+                <Markdown
+                  options={{
+                    overrides: {
+                      h1: {
+                        component: "h1",
+                        props: {
+                          className: "text-2xl font-bold mb-6",
+                        },
+                      },
+                      h2: {
+                        component: "h2",
+                        props: {
+                          className: "text-xl font-semibold mb-5",
+                        },
+                      },
+                      h3: {
+                        component: "h3",
+                        props: {
+                          className: "text-lg font-semibold mb-4",
+                        },
+                      },
+                      h4: {
+                        component: "h4",
+                        props: {
+                          className: "text-base font-semibold mb-4",
+                        },
+                      },
+                      p: {
+                        component: "p",
+                        props: {
+                          className: "mb-4 leading-relaxed",
+                        },
+                      },
+                      ul: {
+                        component: "ul",
+                        props: {
+                          className: "list-none space-y-3 mb-6",
+                        },
+                      },
+                      li: {
+                        component: "li",
+                        props: {
+                          className: "flex items-start gap-3",
+                        },
+                      },
+                      strong: {
+                        component: "strong",
+                        props: {
+                          className: "font-semibold",
+                        },
+                      },
+                      em: {
+                        component: "em",
+                        props: {
+                          className: "italic text-opacity-90",
+                        },
+                      },
+                    },
+                  }}
+                >
+                  {message.content}
+                </Markdown>
               </div>
               {message.type === "user" && (
                 <div className="h-8 w-8 rounded-full bg-[#0066CC] flex items-center justify-center flex-shrink-0">
