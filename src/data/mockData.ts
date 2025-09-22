@@ -47,35 +47,25 @@ export const mockChatResponses = {
   initial: {
     content: `## Welcome to Mr. Cooper! 👋
 
-I'm your dedicated financial assistant, ready to help you manage your tax installments efficiently.
+I'm your dedicated mortgage assistant, ready to help you manage your property payments efficiently.
 
-### Available Services
+### Property Details
 
-#### 💰 Tax Installment Management
+**Address**
+${mockTaxBreakdown.address}
 
-• View payment history
+**Annual Tax Rate**
+${mockTaxBreakdown.annualTaxRate}%
++${(mockTaxBreakdown.annualTaxRate - mockTaxBreakdown.previousTaxRate).toFixed(
+      1
+    )}% from last year
 
-• Check due amounts
+**Property Value**
+$${mockTaxBreakdown.propertyValue.toLocaleString()}
++${mockTaxBreakdown.propertyAppreciation}% appreciation
 
-• Make instant payments
-
-• View payment breakdown
-
-• Manage multiple months
-
-#### 🔍 Payment Analytics
-
-• Track payment history
-
-• View tax rate changes
-
-• Monitor property value
-
-• Analyze payment trends
-
-• Get insights and forecasts
-
-Select an option above, and I'll guide you through the process!
+**Tax Assessment Notice**
+Your property has been reassessed. The new tax rate will be effective from October 2025.
 
 *Your financial security is our top priority.*
 *All transactions are encrypted and secure.*`,

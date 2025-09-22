@@ -55,7 +55,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       },
     ]);
 
-    if (option === "Check Tax Installments") {
+    if (option === "View Property Breakdown") {
       setMessages((prev) => [
         ...prev,
         {
@@ -130,9 +130,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                 <Logo size="sm" variant="logo" className="rounded-sm" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold">
-                  Tax Installment Assistant
-                </h1>
+                <h1 className="text-lg font-semibold">Assistant</h1>
                 <p className="text-sm opacity-90">Powered by ResultFlow.ai</p>
               </div>
             </div>
@@ -252,10 +250,10 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         {showOptions && (
           <div className="px-4 space-y-2">
             <button
-              onClick={() => handleOptionSelect("Check Tax Installments")}
+              onClick={() => handleOptionSelect("View Property Breakdown")}
               className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0066CC] hover:bg-blue-700 text-white font-medium transition-colors"
             >
-              Check Tax Installments
+              View Property Breakdown
             </button>
           </div>
         )}
