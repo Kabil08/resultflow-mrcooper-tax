@@ -11,6 +11,13 @@ import {
 } from "@/components/ui/dialog";
 
 interface AutoPaySetupProps {
+  userData?: {
+    autoPayEnabled: boolean;
+    monthlyPayment: number;
+    dueDate: number;
+    bankName: string;
+    accountLast4: string;
+  };
   onSetupAutoPay: (enabled: boolean) => void;
   onClose: () => void;
   onCancel?: () => void;
@@ -23,6 +30,7 @@ interface FormErrors {
 }
 
 const AutoPaySetup = ({
+  userData,
   onSetupAutoPay,
   onClose,
   onCancel,
@@ -102,7 +110,9 @@ const AutoPaySetup = ({
                   <CreditCard className="w-5 h-5 text-[#0066CC] mt-1" />
                   <div className="text-left">
                     <p className="font-medium text-gray-900">Monthly Payment</p>
-                    <p className="text-sm text-gray-600">$1,402.76</p>
+                    <p className="text-sm text-gray-600">
+                      ${userData?.monthlyPayment.toLocaleString() || "1,402.76"}
+                    </p>
                   </div>
                 </div>
               </div>
