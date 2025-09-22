@@ -545,6 +545,33 @@ const TaxBreakdown = ({
               </div>
 
               <div className="mt-4 space-y-3 border-t pt-3">
+                <div className="bg-amber-50 p-3 rounded-md flex items-start gap-2">
+                  <div className="h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    📈
+                  </div>
+                  <div className="text-sm text-gray-800">
+                    <p className="font-medium text-amber-800">
+                      Property Tax Increase Notice
+                    </p>
+                    <p className="text-amber-700">
+                      Your property tax will increase by 0.3% starting October
+                      2025 📊
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 p-3 rounded-md flex items-start gap-2">
+                  <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    💰
+                  </div>
+                  <div className="text-sm text-gray-800">
+                    <p className="font-medium text-red-800">Overdue Charges</p>
+                    <p className="text-red-700">
+                      You currently have $100 in overdue charges
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-700">
