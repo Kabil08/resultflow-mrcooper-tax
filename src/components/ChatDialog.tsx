@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Message } from "@/types/chat";
-import { mockChatResponses } from "@/data/mockData";
+import { mockChatResponses, mockTaxBreakdown } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TaxBreakdown from "./tax/TaxBreakdown";
+import AutoPaySetup from "./tax/AutoPaySetup";
 import Logo from "@/components/ui/logo";
 
 interface ChatDialogProps {
@@ -29,6 +30,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
   const [isTyping, setIsTyping] = useState(false);
   const [showTaxBreakdown, setShowTaxBreakdown] = useState(false);
   const [showOptions, setShowOptions] = useState<boolean>(true);
+  const [showAutoPaySetup, setShowAutoPaySetup] = useState(false);
 
   const showOptionsWithMessage = () => {
     setShowOptions(true);
@@ -55,7 +57,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       },
     ]);
 
-    if (option === "View Property Breakdown") {
+    if (option === "View Details") {
       setMessages((prev) => [
         ...prev,
         {
@@ -67,6 +69,26 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       ]);
       setShowTaxBreakdown(true);
     }
+  };
+
+  const handleEnableAutoPay = () => {
+    setShowAutoPaySetup(true);
+  };
+
+  const handleAutoPaySetup = (enabled: boolean) => {
+    setShowAutoPaySetup(false);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: "assistant",
+        content: enabled
+          ? `Great! I've set up AutoPay for your monthly escrow payment of $${mockTaxBreakdown.monthlyEscrowPayment.toLocaleString()}. This will help you avoid any future overdue charges.\n\nIs there anything else I can help you with?`
+          : "I understand. You can always enable AutoPay later if you change your mind. Is there anything else I can help you with?",
+        timestamp: new Date(),
+      },
+    ]);
+    showOptionsWithMessage();
   };
 
   const handleSendMessage = () => {
@@ -222,6 +244,17 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                           className: "italic text-opacity-90",
                         },
                       },
+                      a: {
+                        component: "button",
+                        props: {
+                          className:
+                            "text-[#0066CC] hover:underline font-medium",
+                          onClick: (e: React.MouseEvent) => {
+                            e.preventDefault();
+                            handleEnableAutoPay();
+                          },
+                        },
+                      },
                     },
                   }}
                 >
@@ -248,12 +281,12 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         </div>
 
         {showOptions && (
-          <div className="px-4 space-y-2">
+          <div className="px-4 space-y-2 mb-4">
             <button
-              onClick={() => handleOptionSelect("View Property Breakdown")}
+              onClick={() => handleOptionSelect("View Details")}
               className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0066CC] hover:bg-blue-700 text-white font-medium transition-colors"
             >
-              View Property Breakdown
+              View Details
             </button>
           </div>
         )}
@@ -289,6 +322,21 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
               setShowTaxBreakdown(false);
               showOptionsWithMessage();
             }}
+          />
+        )}
+
+        {showAutoPaySetup && (
+          <AutoPaySetup
+            userData={{
+              autoPayEnabled: false,
+              monthlyPayment: mockTaxBreakdown.monthlyEscrowPayment,
+              dueDate: 15,
+              bankName: "Chase Bank",
+              accountLast4: "4567",
+            }}
+            onSetupAutoPay={handleAutoPaySetup}
+            onClose={() => setShowAutoPaySetup(false)}
+            onCancel={() => setShowAutoPaySetup(false)}
           />
         )}
       </SheetContent>

@@ -1,64 +1,41 @@
 import { useState } from "react";
-import { Calendar, Info, Check, ShieldCheck } from "lucide-react";
-import confetti from "canvas-confetti";
+import { Check, CreditCard, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface AutoPaySetupProps {
-  userData: {
-    autoPayEnabled: boolean;
-    monthlyPayment: number;
-    dueDate: number;
-    bankName: string;
-    accountLast4: string;
-  };
   onSetupAutoPay: (enabled: boolean) => void;
   onClose: () => void;
   onCancel?: () => void;
 }
 
+interface FormErrors {
+  routingNumber?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
+}
+
 const AutoPaySetup = ({
-  userData,
   onSetupAutoPay,
   onClose,
   onCancel,
 }: AutoPaySetupProps) => {
-  const [isEnabled, setIsEnabled] = useState(userData.autoPayEnabled);
-  const [isConfirming, setIsConfirming] = useState(false);
+  const [accountType, setAccountType] = useState<"checking" | "savings">(
+    "checking"
+  );
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolderName, setAccountHolderName] = useState("");
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  const handleToggle = (checked: boolean) => {
-    setIsEnabled(checked);
-    setIsConfirming(true);
-  };
-
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#0066CC", "#004C99", "#60a5fa"],
-    });
-  };
-
-  const handleConfirm = () => {
-    setShowSuccess(true);
-    if (isEnabled) {
-      triggerConfetti();
-    }
-    setTimeout(() => {
-      onSetupAutoPay(isEnabled);
-      onClose();
-    }, 2000);
-  };
 
   const handleClose = () => {
     if (onCancel) {
@@ -68,38 +45,92 @@ const AutoPaySetup = ({
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+
+    if (!routingNumber.trim()) {
+      errors.routingNumber = "Routing number is required";
+    } else if (!/^\d{9}$/.test(routingNumber)) {
+      errors.routingNumber = "Invalid routing number (must be 9 digits)";
+    }
+
+    if (!accountNumber.trim()) {
+      errors.accountNumber = "Account number is required";
+    } else if (!/^\d{4,17}$/.test(accountNumber)) {
+      errors.accountNumber = "Invalid account number";
+    }
+
+    if (!accountHolderName.trim()) {
+      errors.accountHolderName = "Account holder name is required";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsProcessing(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsProcessing(false);
+      setShowSuccess(true);
+    }, 1000);
+  };
+
   if (showSuccess) {
     return (
       <Dialog open onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md bg-white text-center">
-          <DialogHeader>
-            <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl font-semibold text-[#0066CC] text-center flex items-center justify-center gap-2">
-                <ShieldCheck className="h-6 w-6 text-[#0066CC]" />
-                AutoPay {isEnabled ? "Enabled" : "Disabled"}
-              </DialogTitle>
-              <DialogClose
-                className="h-6 w-6 text-gray-500 hover:text-[#0066CC]"
-                onClick={handleClose}
-              />
+        <DialogContent className="sm:max-w-lg bg-white">
+          <div className="text-center py-6">
+            <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <Check className="w-6 h-6 text-green-600" />
             </div>
-          </DialogHeader>
-          <div className="py-8 space-y-4">
-            <div className="mx-auto w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
-              <Check className="h-6 w-6 text-[#0066CC]" />
+            <DialogTitle className="text-xl font-semibold text-gray-900 mb-2">
+              AutoPay Successfully Enabled
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 mb-6">
+              Your automatic payments have been set up successfully
+            </DialogDescription>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <CreditCard className="w-5 h-5 text-[#0066CC] mt-1" />
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Monthly Payment</p>
+                    <p className="text-sm text-gray-600">$1,402.76</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Bell className="w-5 h-5 text-[#0066CC] mt-1" />
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">
+                      Payment Notifications
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      You'll receive email reminders before each payment
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-semibold text-[#0066CC]">
-              AutoPay {isEnabled ? "Enabled" : "Disabled"}
-            </h2>
-            <p className="text-gray-600">
-              {isEnabled
-                ? `Your monthly payment of $${userData.monthlyPayment.toFixed(
-                    2
-                  )} will be automatically processed on the ${
-                    userData.dueDate
-                  }${getOrdinalSuffix(userData.dueDate)} of each month.`
-                : "AutoPay has been disabled. You'll need to make manual payments going forward."}
-            </p>
+
+            <Button
+              className="w-full bg-[#0066CC] hover:bg-blue-700 text-white"
+              onClick={() => {
+                onSetupAutoPay(true);
+                onClose();
+              }}
+            >
+              Done
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -108,107 +139,189 @@ const AutoPaySetup = ({
 
   return (
     <Dialog open onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-white">
-        <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle className="text-xl font-semibold text-[#0066CC]">
-              AutoPay Setup
-            </DialogTitle>
-            <DialogClose
-              className="h-6 w-6 text-gray-500 hover:text-[#0066CC]"
-              onClick={handleClose}
-            />
-          </div>
-          <DialogDescription className="text-gray-600">
-            Automatically pay your monthly EMI and avoid late fees
-          </DialogDescription>
+      <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] flex flex-col mb-4">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-2xl font-semibold text-[#0066CC]">
+            Set Up AutoPay
+          </DialogTitle>
+          <p className="text-gray-600 mt-2">
+            Enter your bank account details to set up automatic monthly payments
+          </p>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between space-x-4">
-            <div className="space-y-1 flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Enable AutoPay
-              </h3>
-              <p className="text-sm text-gray-600">
-                Your payment will be automatically processed on the due date
-              </p>
-            </div>
-            <Switch
-              checked={isEnabled}
-              onCheckedChange={handleToggle}
-              className="flex-shrink-0 data-[state=checked]:bg-[#0066CC]"
-            />
-          </div>
-
-          <div className="rounded-lg border border-gray-200 p-4 space-y-4 bg-gray-50">
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-[#0066CC] mt-1" />
-              <div>
-                <p className="font-medium text-gray-900">Payment Schedule</p>
-                <p className="text-sm text-gray-600">
-                  Monthly payment of ${userData.monthlyPayment.toFixed(2)}
-                  <br />
-                  Due on the {userData.dueDate}
-                  {getOrdinalSuffix(userData.dueDate)} of each month
-                </p>
+        <div className="space-y-6 overflow-y-auto flex-1 pr-2">
+          {/* Benefits Section */}
+          <div className="bg-blue-50 rounded-lg p-6">
+            <h3 className="text-[#0066CC] font-semibold text-lg mb-4">
+              AutoPay Benefits
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="rounded-full bg-[#0066CC] p-1">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-gray-700">
+                  Never miss a payment deadline
+                </span>
               </div>
-            </div>
-
-            <div className="flex items-start gap-3 bg-blue-50 p-4 rounded-md">
-              <Info className="h-5 w-5 text-[#0066CC] mt-1 flex-shrink-0" />
-              <div className="text-sm text-gray-700">
-                <p className="font-medium mb-2">Important Information</p>
-                <ul className="list-disc ml-4 space-y-2">
-                  <li>Payments will be processed on the due date</li>
-                  <li>You can cancel AutoPay at any time</li>
-                  <li>Ensure sufficient funds are available</li>
-                  <li>
-                    You'll receive email notifications before each payment
-                  </li>
-                </ul>
+              <div className="flex items-center gap-2">
+                <div className="rounded-full bg-[#0066CC] p-1">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-gray-700">
+                  Avoid late fees completely
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="rounded-full bg-[#0066CC] p-1">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-gray-700">
+                  Automatic monthly payments
+                </span>
               </div>
             </div>
           </div>
 
-          {isConfirming && (
-            <div className="flex justify-end gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEnabled(!isEnabled);
-                  setIsConfirming(false);
+          {/* Account Type Selection */}
+          <div className="space-y-2">
+            <label className="text-gray-900 font-medium">Account Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className={`p-4 rounded-lg text-center font-medium transition-colors ${
+                  accountType === "checking"
+                    ? "bg-[#0066CC] text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                onClick={() => setAccountType("checking")}
+              >
+                Checking
+              </button>
+              <button
+                className={`p-4 rounded-lg text-center font-medium transition-colors ${
+                  accountType === "savings"
+                    ? "bg-[#0066CC] text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                onClick={() => setAccountType("savings")}
+              >
+                Savings
+              </button>
+            </div>
+          </div>
+
+          {/* Bank Account Details */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-gray-900 font-medium">
+                Routing Number
+              </label>
+              <Input
+                value={routingNumber}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  setRoutingNumber(value);
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    routingNumber: undefined,
+                  }));
                 }}
-                className="w-full sm:w-auto border-[#0066CC] text-[#0066CC] hover:bg-blue-50"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                className="w-full sm:w-auto bg-[#0066CC] hover:bg-blue-700 text-white font-medium"
-              >
-                {isEnabled ? "Enable" : "Disable"} AutoPay
-              </Button>
+                placeholder="123456789"
+                maxLength={9}
+                className={`bg-white ${
+                  formErrors.routingNumber ? "border-red-500" : ""
+                }`}
+              />
+              {formErrors.routingNumber && (
+                <p className="text-sm text-red-500">
+                  {formErrors.routingNumber}
+                </p>
+              )}
             </div>
-          )}
+
+            <div className="space-y-2">
+              <label className="text-gray-900 font-medium">
+                Account Number
+              </label>
+              <Input
+                value={accountNumber}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  setAccountNumber(value);
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    accountNumber: undefined,
+                  }));
+                }}
+                placeholder="Enter your account number"
+                maxLength={17}
+                className={`bg-white ${
+                  formErrors.accountNumber ? "border-red-500" : ""
+                }`}
+              />
+              {formErrors.accountNumber && (
+                <p className="text-sm text-red-500">
+                  {formErrors.accountNumber}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2 mb-6">
+              <label className="text-gray-900 font-medium">
+                Account Holder Name
+              </label>
+              <Input
+                value={accountHolderName}
+                onChange={(e) => {
+                  setAccountHolderName(e.target.value);
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    accountHolderName: undefined,
+                  }));
+                }}
+                placeholder="John Doe"
+                className={`bg-white ${
+                  formErrors.accountHolderName ? "border-red-500" : ""
+                }`}
+              />
+              {formErrors.accountHolderName && (
+                <p className="text-sm text-red-500">
+                  {formErrors.accountHolderName}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="flex flex-col gap-2 pt-4 mt-4 border-t flex-shrink-0">
+          <Button
+            onClick={handleSubmit}
+            disabled={isProcessing}
+            className="w-full bg-[#0066CC] hover:bg-blue-700 text-white font-medium h-12"
+          >
+            {isProcessing ? (
+              <span className="flex items-center gap-2">
+                Setting up AutoPay...
+              </span>
+            ) : (
+              <>
+                <CreditCard className="h-5 w-5 mr-2" /> Enable AutoPay
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isProcessing}
+            className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 font-medium h-12"
+          >
+            Cancel
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
-
-const getOrdinalSuffix = (day: number) => {
-  if (day > 3 && day < 21) return "th";
-  switch (day % 10) {
-    case 1:
-      return "st";
-    case 2:
-      return "nd";
-    case 3:
-      return "rd";
-    default:
-      return "th";
-  }
 };
 
 export default AutoPaySetup;

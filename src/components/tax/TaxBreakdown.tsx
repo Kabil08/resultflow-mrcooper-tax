@@ -4,8 +4,6 @@ import {
   TrendingUp,
   Info,
   AlertTriangle,
-  Building2,
-  ArrowUpRight,
   CreditCard,
   Check,
   Bell,
@@ -27,7 +25,7 @@ import { TaxBreakdown as TaxBreakdownType } from "@/types/chat";
 interface BankDetails {
   accountNumber: string;
   routingNumber: string;
-  accountType: "checking" | "savings" | "money_market";
+  accountType: "checking" | "savings";
   accountHolderName: string;
 }
 
@@ -139,6 +137,8 @@ const TaxBreakdown = ({
 
   const handleEnableAutoPay = () => {
     setShowAutoPaySetup(true);
+    setShowAutoPayPrompt(false);
+    setShowAutoPaySuccess(false);
   };
 
   const validateBankDetails = (): boolean => {
@@ -176,31 +176,15 @@ const TaxBreakdown = ({
     setTimeout(() => {
       setIsProcessing(false);
       setShowAutoPaySuccess(true);
+      setShowAutoPaySetup(false);
     }, 1000);
   };
 
-  const formatAccountNumber = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    const matches = v.match(/\d{4,17}/g);
-    const match = (matches && matches[0]) || "";
-    const parts = [];
-
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-
-    if (parts.length) {
-      return parts.join(" ");
-    } else {
-      return value;
-    }
-  };
-
-  const handleAccountNumberChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const formatted = formatAccountNumber(e.target.value);
-    setBankDetails((prev) => ({ ...prev, accountNumber: formatted }));
+  const handleAutoPayClose = () => {
+    setShowAutoPaySetup(false);
+    setShowAutoPaySuccess(false);
+    setShowAutoPayPrompt(false);
+    onClose();
   };
 
   const calculateTotal = () => {
@@ -286,9 +270,7 @@ const TaxBreakdown = ({
       <Dialog
         open
         onOpenChange={() => {
-          setShowAutoPaySuccess(false);
-          setShowAutoPaySetup(false);
-          onClose();
+          handleAutoPayClose();
         }}
       >
         <DialogContent className="sm:max-w-md bg-white">
@@ -333,11 +315,7 @@ const TaxBreakdown = ({
 
             <Button
               className="w-full bg-[#0066CC] hover:bg-blue-700 text-white"
-              onClick={() => {
-                setShowAutoPaySuccess(false);
-                setShowAutoPaySetup(false);
-                onClose();
-              }}
+              onClick={handleAutoPayClose}
             >
               Done
             </Button>
@@ -347,7 +325,7 @@ const TaxBreakdown = ({
     );
   }
 
-  if (showAutoPaySetup && !showAutoPaySuccess) {
+  if (showAutoPaySetup) {
     return (
       <Dialog open onOpenChange={() => setShowAutoPaySetup(false)}>
         <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] flex flex-col">
@@ -397,8 +375,8 @@ const TaxBreakdown = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="accountType">Account Type</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {["checking", "savings", "money_market"].map((type) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {["checking", "savings"].map((type) => (
                     <button
                       key={type}
                       onClick={() =>
@@ -413,12 +391,7 @@ const TaxBreakdown = ({
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
-                      {type
-                        .split("_")
-                        .map(
-                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                        )
-                        .join(" ")}
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -452,7 +425,12 @@ const TaxBreakdown = ({
                   id="accountNumber"
                   placeholder="Enter your account number"
                   value={bankDetails.accountNumber}
-                  onChange={handleAccountNumberChange}
+                  onChange={(e) =>
+                    setBankDetails((prev) => ({
+                      ...prev,
+                      accountNumber: e.target.value.replace(/\D/g, ""),
+                    }))
+                  }
                   maxLength={17}
                   className={formErrors.accountNumber ? "border-red-500" : ""}
                 />
@@ -524,7 +502,7 @@ const TaxBreakdown = ({
               className="w-full"
               disabled={isProcessing}
             >
-              Back to Payment Breakdown
+              Cancel
             </Button>
           </div>
         </DialogContent>
@@ -546,9 +524,7 @@ const TaxBreakdown = ({
                 onClick={handleClose}
               />
             </div>
-            <DialogDescription className="text-gray-600">
-              Review your tax payments and property details
-            </DialogDescription>
+            <DialogDescription className="text-gray-600"></DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 overflow-y-auto pr-2">
@@ -556,12 +532,14 @@ const TaxBreakdown = ({
             <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
               <div className="flex items-start">
                 <div className="flex items-start gap-3">
-                  <Building2 className="h-5 w-5 text-[#0066CC] mt-1" />
+                  <CreditCard className="h-5 w-5 text-[#0066CC] mt-1" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      Property Details
+                      Your Loan balance is
                     </p>
-                    <p className="text-sm text-gray-600">{data.address}</p>
+                    <p className="text-lg font-semibold text-[#0066CC]">
+                      $519,013.20
+                    </p>
                   </div>
                 </div>
               </div>
@@ -570,36 +548,27 @@ const TaxBreakdown = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-700">
-                      Annual Tax Rate
+                      Escrow Balance
                     </p>
-                    <p className="text-lg font-semibold text-[#0066CC]">2.5%</p>
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
-                      <ArrowUpRight className="h-3 w-3" />
-                      +0.3% from last year
+                    <p className="text-lg font-semibold text-[#0066CC]">
+                      $11,034.76
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700">
-                      Property Value
+                      Monthly Escrow Payment
                     </p>
                     <p className="text-lg font-semibold text-[#0066CC]">
-                      $520,000
-                    </p>
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
-                      <ArrowUpRight className="h-3 w-3" />
-                      +5.2% appreciation
+                      $1,402.76
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-amber-50 p-3 rounded-md flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    <p className="font-medium">Tax Assessment Notice</p>
-                    <p>
-                      Your property has been reassessed. The new tax rate will
-                      be effective from October 2025.
-                    </p>
+                <div className="bg-blue-50 p-3 rounded-md flex items-start gap-2">
+                  <Calendar className="h-5 w-5 text-[#0066CC] flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-gray-800">
+                    <p className="font-medium">Loan Duration</p>
+                    <p>Feb 2024 - Mar 2054</p>
                   </div>
                 </div>
               </div>
@@ -609,7 +578,7 @@ const TaxBreakdown = ({
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <h3 className="font-medium text-gray-900">
-                  Unpaid Tax Payments
+                  Unpaid Installment Fee
                 </h3>
                 <p className="text-sm text-amber-600 flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
@@ -673,7 +642,8 @@ const TaxBreakdown = ({
                           {month.status === "overdue" && (
                             <p className="text-xs text-red-600 mt-0.5">
                               Overdue by{" "}
-                              {month.lateFees ? `($${month.lateFees} fee)` : ""}
+                              {month.month === "November" ? "45" : "15"} days ($
+                              {month.lateFees} fee)
                             </p>
                           )}
                         </div>
@@ -806,6 +776,13 @@ const TaxBreakdown = ({
                   {selectedMonths.length === 1 ? "month" : "months"})
                 </span>
               )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              className="w-full border-gray-200 text-gray-700 hover:bg-gray-50"
+            >
+              Close
             </Button>
           </div>
         </DialogContent>

@@ -15,6 +15,8 @@ export interface TaxBreakdown {
   lastAssessmentDate: string;
   nextAssessmentDate: string;
   propertyAppreciation: number;
+  escrowBalance: number;
+  monthlyEscrowPayment: number;
   unpaidMonths: {
     month: string;
     year: number;

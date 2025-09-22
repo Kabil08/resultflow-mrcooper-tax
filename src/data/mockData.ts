@@ -1,71 +1,77 @@
 import { TaxBreakdown } from "@/types/chat";
 
-export const mockUserData = {
-  monthlyPayment: 1299.99,
-  dueDate: 15,
-};
-
-export const mockTaxBreakdown: TaxBreakdown = {
+export const taxBreakdownData: TaxBreakdown = {
   propertyId: "PROP123",
-  address: "123 Main Street, San Francisco, CA 94105",
-  propertyValue: 520000,
+  address: "123 Main St, San Francisco, CA 94105",
+  propertyValue: 519013.2,
   annualTaxRate: 2.5,
   previousTaxRate: 2.2,
   lastAssessmentDate: "2024-09-15",
   nextAssessmentDate: "2025-09-15",
+  escrowBalance: 11034.76,
+  monthlyEscrowPayment: 1402.76,
   propertyAppreciation: 5.2,
+  totalAmount: 4208.28,
+  totalLateFees: 100.0,
   unpaidMonths: [
+    {
+      month: "October",
+      year: 2025,
+      amount: 1402.76,
+      dueDate: "2025-10-15",
+      status: "overdue",
+      lateFees: 100,
+    },
     {
       month: "September",
       year: 2025,
-      amount: 1299.99,
+      amount: 1402.76,
       dueDate: "2025-09-15",
       status: "unpaid",
+      lateFees: 0,
     },
     {
       month: "August",
       year: 2025,
-      amount: 1299.99,
+      amount: 1402.76,
       dueDate: "2025-08-15",
-      status: "overdue",
-      lateFees: 50,
-    },
-    {
-      month: "July",
-      year: 2025,
-      amount: 1249.99,
-      dueDate: "2025-07-15",
-      status: "overdue",
-      lateFees: 75,
+      status: "unpaid",
+      lateFees: 0,
     },
   ],
-  totalAmount: 3849.97,
-  totalLateFees: 125,
 };
+
+// Export the same data under the name mockTaxBreakdown for compatibility
+export const mockTaxBreakdown = taxBreakdownData;
 
 export const mockChatResponses = {
   initial: {
     content: `## Welcome to Mr. Cooper! 👋
 
-I'm your dedicated mortgage assistant, ready to help you manage your property payments efficiently.
+I'm your dedicated financial assistant, ready to help you manage your payments effortlessly.
 
-### Property Details
+### Your Loan Overview
 
-**Address**
-${mockTaxBreakdown.address}
+Your loan balance is **$${taxBreakdownData.propertyValue.toLocaleString()}**
+Loan Duration: **Feb 2024 - Mar 2054**
 
-**Annual Tax Rate**
-${mockTaxBreakdown.annualTaxRate}%
-+${(mockTaxBreakdown.annualTaxRate - mockTaxBreakdown.previousTaxRate).toFixed(
-      1
-    )}% from last year
+### Taxes and Insurance
 
-**Property Value**
-$${mockTaxBreakdown.propertyValue.toLocaleString()}
-+${mockTaxBreakdown.propertyAppreciation}% appreciation
+**Escrow Balance**
+$${taxBreakdownData.escrowBalance.toLocaleString()}
 
-**Tax Assessment Notice**
-Your property has been reassessed. The new tax rate will be effective from October 2025.
+**Monthly Escrow Payment**
+$${taxBreakdownData.monthlyEscrowPayment.toLocaleString()}
+
+### Important Notice ⚠️
+
+Your property tax has increased by ${(
+      taxBreakdownData.annualTaxRate - taxBreakdownData.previousTaxRate
+    ).toFixed(1)}% starting October 2025. You currently have **$${
+      taxBreakdownData.totalLateFees
+    }** in overdue charges.
+
+💡 **Tip:** [Enable AutoPay](#) to avoid future overdue charges and manage your payments effortlessly.
 
 *Your financial security is our top priority.*
 *All transactions are encrypted and secure.*`,
@@ -79,21 +85,21 @@ Let's review your tax installment details and options.
 
 #### 💰 Total Amount Due
 
-• Principal: $${mockTaxBreakdown.totalAmount.toFixed(2)}
+• Principal: $${taxBreakdownData.totalAmount.toFixed(2)}
 
-• Late Fees: $${mockTaxBreakdown.totalLateFees.toFixed(2)}
+• Late Fees: $${taxBreakdownData.totalLateFees.toFixed(2)}
 
 • Total Due: $${(
-      mockTaxBreakdown.totalAmount + mockTaxBreakdown.totalLateFees
+      taxBreakdownData.totalAmount + taxBreakdownData.totalLateFees
     ).toFixed(2)}
 
 #### 📈 Tax Rate Information
 
-• Current Rate: ${mockTaxBreakdown.annualTaxRate}%
+• Current Rate: ${taxBreakdownData.annualTaxRate}%
 
-• Previous Rate: ${mockTaxBreakdown.previousTaxRate}%
+• Previous Rate: ${taxBreakdownData.previousTaxRate}%
 
-• Property Value: $${mockTaxBreakdown.propertyValue.toLocaleString()}
+• Property Value: $${taxBreakdownData.propertyValue.toLocaleString()}
 
 ### Payment Options
 
@@ -106,6 +112,6 @@ Let's review your tax installment details and options.
 • Clear overdue amounts
 
 *Select the months you'd like to pay for hassle-free payments.*`,
-    taxBreakdown: mockTaxBreakdown,
+    taxBreakdown: taxBreakdownData,
   },
 };
