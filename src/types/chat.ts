@@ -25,7 +25,6 @@ export interface TaxBreakdown {
   }[];
   totalAmount: number;
   totalLateFees: number;
-  autoPayEnabled: boolean;
 }
 
 export interface UserData {
@@ -47,9 +46,6 @@ export interface UserData {
     cardType?: string;
     expiryDate?: string;
   };
-  autoPayEnabled: boolean;
   monthlyPayment?: number;
   dueDate?: number;
-  bankName?: string;
-  accountLast4?: string;
 }

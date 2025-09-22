@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Message } from "@/types/chat";
-import { mockChatResponses, mockUserData } from "@/data/mockData";
+import { mockChatResponses } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TaxBreakdown from "./tax/TaxBreakdown";
-import AutoPaySetup from "./tax/AutoPaySetup";
 import Logo from "@/components/ui/logo";
 
 interface ChatDialogProps {
@@ -29,7 +28,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showTaxBreakdown, setShowTaxBreakdown] = useState(false);
-  const [showAutoPaySetup, setShowAutoPaySetup] = useState(false);
   const [showOptions, setShowOptions] = useState<boolean>(true);
 
   const showOptionsWithMessage = () => {
@@ -57,7 +55,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
       },
     ]);
 
-    if (option === "Check Tax/EMI Payments") {
+    if (option === "Check Tax Installments") {
       setMessages((prev) => [
         ...prev,
         {
@@ -68,39 +66,7 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         },
       ]);
       setShowTaxBreakdown(true);
-    } else if (option === "Set up AutoPay") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          type: "assistant",
-          content: mockChatResponses.autopaySetup.content,
-          timestamp: new Date(),
-        },
-      ]);
-      setShowAutoPaySetup(true);
     }
-  };
-
-  const handleAutoPaySetup = (enabled: boolean) => {
-    setShowAutoPaySetup(false);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        type: "assistant",
-        content: enabled
-          ? mockChatResponses.autopaySuccess.content
-          : mockChatResponses.autopayDisabled.content,
-        timestamp: new Date(),
-      },
-    ]);
-    showOptionsWithMessage();
-  };
-
-  const handleAutoPayCancel = () => {
-    setShowAutoPaySetup(false);
-    showOptionsWithMessage();
   };
 
   const handleSendMessage = () => {
@@ -122,24 +88,10 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
     setTimeout(() => {
       if (
         lowerMessage.includes("tax") ||
-        lowerMessage.includes("emi") ||
+        lowerMessage.includes("installment") ||
         lowerMessage.includes("payment")
       ) {
         setShowTaxBreakdown(true);
-      } else if (
-        lowerMessage.includes("autopay") ||
-        lowerMessage.includes("auto pay")
-      ) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            type: "assistant",
-            content: mockChatResponses.autopaySetup.content,
-            timestamp: new Date(),
-          },
-        ]);
-        setShowAutoPaySetup(true);
       } else {
         showOptionsWithMessage();
       }
@@ -178,7 +130,9 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
                 <Logo size="sm" variant="logo" className="rounded-sm" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold">Tax & EMI Assistant</h1>
+                <h1 className="text-lg font-semibold">
+                  Tax Installment Assistant
+                </h1>
                 <p className="text-sm opacity-90">Powered by ResultFlow.ai</p>
               </div>
             </div>
@@ -298,16 +252,10 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
         {showOptions && (
           <div className="px-4 space-y-2">
             <button
-              onClick={() => handleOptionSelect("Check Tax/EMI Payments")}
+              onClick={() => handleOptionSelect("Check Tax Installments")}
               className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0066CC] hover:bg-blue-700 text-white font-medium transition-colors"
             >
-              Check Tax/EMI Payments
-            </button>
-            <button
-              onClick={() => handleOptionSelect("Set up AutoPay")}
-              className="w-full text-center px-4 py-2.5 rounded-lg bg-[#0066CC] hover:bg-blue-700 text-white font-medium transition-colors"
-            >
-              Set up AutoPay
+              Check Tax Installments
             </button>
           </div>
         )}
@@ -335,10 +283,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
           <TaxBreakdown
             data={mockChatResponses.taxBreakdown.taxBreakdown}
             onMakePayment={handlePayment}
-            onSetupAutoPay={() => {
-              setShowTaxBreakdown(false);
-              setShowAutoPaySetup(true);
-            }}
             onClose={() => {
               setShowTaxBreakdown(false);
               showOptionsWithMessage();
@@ -347,18 +291,6 @@ const ChatDialog = ({ isOpen, onClose }: ChatDialogProps) => {
               setShowTaxBreakdown(false);
               showOptionsWithMessage();
             }}
-          />
-        )}
-
-        {showAutoPaySetup && (
-          <AutoPaySetup
-            userData={mockUserData}
-            onSetupAutoPay={handleAutoPaySetup}
-            onClose={() => {
-              setShowAutoPaySetup(false);
-              showOptionsWithMessage();
-            }}
-            onCancel={handleAutoPayCancel}
           />
         )}
       </SheetContent>
