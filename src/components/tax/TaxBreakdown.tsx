@@ -40,6 +40,7 @@ const TaxBreakdown = ({
   const [showPropertyInfo, setShowPropertyInfo] = useState(false);
   const [showAutoPaySetup, setShowAutoPaySetup] = useState(false);
   const [showAutoPaySuccess, setShowAutoPaySuccess] = useState(false);
+  const [showAutoPayPrompt, setShowAutoPayPrompt] = useState(false);
 
   const handleClose = () => {
     if (onCancel) {
@@ -84,9 +85,32 @@ const TaxBreakdown = ({
   const handlePayment = async () => {
     if (selectedMonths.length === 0) return;
 
+    // Show autopay prompt if not already set up
+    // In a real app, you would check this from your backend/state management
+    const isAutoPayEnabled = false; // This would come from your backend
+    if (!isAutoPayEnabled) {
+      setShowAutoPayPrompt(true);
+      return;
+    }
+
     setIsProcessing(true);
 
     // Add a slight delay to show the animation
+    setTimeout(() => {
+      triggerPaymentConfetti();
+      const selectedMonthNames = selectedMonths.map((monthYear) => {
+        const [month, year] = monthYear.split("-");
+        return `${month} ${year}`;
+      });
+      onMakePayment(selectedMonthNames);
+      setIsProcessing(false);
+    }, 1000);
+  };
+
+  const handlePaymentWithoutAutoPay = () => {
+    setShowAutoPayPrompt(false);
+    setIsProcessing(true);
+
     setTimeout(() => {
       triggerPaymentConfetti();
       const selectedMonthNames = selectedMonths.map((monthYear) => {
@@ -125,6 +149,69 @@ const TaxBreakdown = ({
     const increase = ((currentAmount - previousAmount) / previousAmount) * 100;
     return increase.toFixed(1);
   };
+
+  if (showAutoPayPrompt) {
+    return (
+      <Dialog
+        open
+        onOpenChange={() => {
+          setShowAutoPayPrompt(false);
+        }}
+      >
+        <DialogContent className="sm:max-w-md bg-white">
+          <div className="text-center py-4">
+            <div className="mx-auto w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-amber-600" />
+            </div>
+            <DialogTitle className="text-xl font-semibold text-gray-900 mb-2">
+              Enable AutoPay?
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 mb-6">
+              You haven't enabled AutoPay yet. Would you like to set it up now
+              to avoid future late fees?
+            </DialogDescription>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <CreditCard className="w-5 h-5 text-[#0066CC] mt-1" />
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">
+                      Benefits of AutoPay
+                    </p>
+                    <ul className="text-sm text-gray-600 mt-2 space-y-1">
+                      <li>• Never miss a payment deadline</li>
+                      <li>• Avoid late fees completely</li>
+                      <li>• Hassle-free monthly payments</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                className="w-full bg-[#0066CC] hover:bg-blue-700 text-white"
+                onClick={() => {
+                  setShowAutoPayPrompt(false);
+                  setShowAutoPaySetup(true);
+                }}
+              >
+                Set Up AutoPay
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-gray-200 text-gray-700 hover:bg-gray-50"
+                onClick={handlePaymentWithoutAutoPay}
+              >
+                Continue Without AutoPay
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (showAutoPaySuccess) {
     return (
